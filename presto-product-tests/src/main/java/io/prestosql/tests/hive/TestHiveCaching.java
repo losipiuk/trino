@@ -17,6 +17,8 @@ import io.airlift.units.Duration;
 import io.prestosql.tempto.ProductTest;
 import io.prestosql.tempto.assertions.QueryAssert.Row;
 import io.prestosql.tempto.query.QueryResult;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
@@ -42,6 +44,7 @@ public class TestHiveCaching
     @Test(groups = {HIVE_CACHING, PROFILE_SPECIFIC_TESTS})
     public void testReadFromCache()
     {
+        initializeRubixStats();
         testReadFromTable("table1");
         testReadFromTable("table2");
     }
@@ -95,6 +98,18 @@ public class TestHiveCaching
         query("DROP TABLE " + nonCachedTableName);
     }
 
+    private void initializeRubixStats()
+    {
+        // TODO this is needed for now because Rubix JMX statistis are only registered lazily
+        // on first use of CachingFileSystem when initialize() method is called.
+
+        String initializeStatsTable = "hive.default.initialize_rubix_stats";
+        query("CREATE TABLE " + initializeStatsTable + " (col varchar) WITH (format='TEXTFILE')");
+        query("INSERT INTO " + initializeStatsTable + " VALUES ('x')");
+        query("SELECT * FROM " + initializeStatsTable);
+        query("DROP TABLE " + initializeStatsTable);
+    }
+
     /**
      * Creates table with 5 text files that are larger than 1MB
      */
@@ -121,8 +136,11 @@ public class TestHiveCaching
 
     private QueryResult getCacheStats()
     {
-        return query("SELECT sum(cachedreads) as cachedreads, sum(remotereads) as remotereads, sum(nonlocalreads) as nonlocalreads FROM " +
-                "jmx.current.\"rubix:catalog=hive,name=stats\"");
+        return query("SELECT " +
+                "  sum(mb_read_from_cache) as cachedreads, " +
+                "  sum(MB_read_from_source+Direct_rrc_data_read) as remotereads, " +
+                "  sum(nonlocal_rrc_data_read) as nonlocalreads " +
+                "FROM jmx.current.\"rubix:catalog=hive,type=detailed,name=stats\";");
     }
 
     private long getCachedReads(QueryResult queryResult)

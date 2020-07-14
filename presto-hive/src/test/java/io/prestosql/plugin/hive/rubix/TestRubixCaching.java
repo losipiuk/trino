@@ -244,8 +244,6 @@ public class TestRubixCaching
             });
             closer.register(() -> {
                 if (cachingFileSystem != null) {
-                    // reset cluster manager
-                    unwrapCachingFileSystem(cachingFileSystem).setClusterManager(null);
                     cachingFileSystem.close();
                     cachingFileSystem = null;
                 }
@@ -554,7 +552,9 @@ public class TestRubixCaching
     private long getRemoteReadsCount()
     {
         try {
-            return (long) BEAN_SERVER.getAttribute(new ObjectName("rubix:name=stats,catalog=catalog"), "RemoteReads");
+            long remoteReadsReadThrough = (long) BEAN_SERVER.getAttribute(new ObjectName("rubix:name=stats,catalog=catalog"), "MB_read_from_source"); // updated in READ-THROUGH mode
+            long remoteReadsAsync = (long) BEAN_SERVER.getAttribute(new ObjectName("rubix:name=stats,type=detailed,catalog=catalog"), "Direct_rrc_data_read"); // updated in ASYNC mode
+            return remoteReadsReadThrough + remoteReadsAsync;
         }
         catch (Exception exception) {
             throw new RuntimeException(exception);
@@ -564,7 +564,7 @@ public class TestRubixCaching
     private long getCachedReadsCount()
     {
         try {
-            return (long) BEAN_SERVER.getAttribute(new ObjectName("rubix:name=stats,catalog=catalog"), "CachedReads");
+            return (long) BEAN_SERVER.getAttribute(new ObjectName("rubix:name=stats,catalog=catalog"), "MB_read_from_cache");
         }
         catch (Exception exception) {
             throw new RuntimeException(exception);
@@ -578,7 +578,7 @@ public class TestRubixCaching
         }
 
         try {
-            return (long) BEAN_SERVER.getAttribute(new ObjectName("metrics:name=rubix.bookkeeper.count.async_downloaded_mb"), "Count");
+            return (long) BEAN_SERVER.getAttribute(new ObjectName("rubix:name=stats,type=detailed,catalog=catalog"), "BKS_data_downloaded_in_parallel_warmup");
         }
         catch (Exception exception) {
             throw new RuntimeException(exception);
