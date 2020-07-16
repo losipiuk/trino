@@ -83,7 +83,7 @@
     </property>
 
     <property>
-        <name>dfs.encrypt.data.transfer</name>
-        <value>true</value>
+        <name>dfs.data.transfer.protection</name>
+        <value>privacy</value>
     </property>
 </configuration>
