@@ -114,7 +114,7 @@ public class HdfsConfigurationInitializer
         config.setInt(DFS_CLIENT_KEY_PROVIDER_CACHE_EXPIRY_MS, dfsKeyProviderCacheTtlMillis);
 
         if (wireEncryptionEnabled) {
-            config.set(HADOOP_RPC_PROTECTION, "privacy");
+            //config.set(HADOOP_RPC_PROTECTION, "privacy");
             config.setBoolean("dfs.encrypt.data.transfer", true);
         }
 

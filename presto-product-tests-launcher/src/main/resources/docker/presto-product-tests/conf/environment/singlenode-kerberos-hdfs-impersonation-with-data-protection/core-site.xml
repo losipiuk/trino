@@ -68,6 +68,6 @@
 
     <property>
         <name>hadoop.rpc.protection</name>
-        <value>privacy</value>
+        <value></value>
     </property>
 </configuration>

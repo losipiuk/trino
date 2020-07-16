@@ -85,7 +85,7 @@
     <!-- Data communication protection -->
     <property>
         <name>dfs.data.transfer.protection</name>
-        <value>privacy</value>
+        <value>authentication</value>
     </property>
 
     <property>
