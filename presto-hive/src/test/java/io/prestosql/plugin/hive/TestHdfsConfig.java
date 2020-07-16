@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import io.airlift.units.Duration;
+import io.prestosql.plugin.hive.HdfsConfig.HdfsDataTranserProtection;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import static io.airlift.configuration.testing.ConfigAssertions.assertFullMapping;
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHdfsConfig
 {
@@ -46,6 +48,7 @@ public class TestHdfsConfig
                 .setDomainSocketPath(null)
                 .setSocksProxy(null)
                 .setWireEncryptionEnabled(false)
+                .setHdfsDataTransferProtection(HdfsDataTranserProtection.NONE)
                 .setFileSystemMaxCacheSize(1000));
     }
 
@@ -68,6 +71,7 @@ public class TestHdfsConfig
                 .put("hive.dfs.domain-socket-path", "/foo")
                 .put("hive.hdfs.socks-proxy", "localhost:4567")
                 .put("hive.hdfs.wire-encryption.enabled", "true")
+                .put("hive.hdfs.data-transfer-protection", "privacy")
                 .put("hive.fs.cache.max-size", "1010")
                 .build();
 
@@ -83,8 +87,18 @@ public class TestHdfsConfig
                 .setDomainSocketPath("/foo")
                 .setSocksProxy(HostAndPort.fromParts("localhost", 4567))
                 .setWireEncryptionEnabled(true)
+                .setHdfsDataTransferProtection(HdfsDataTranserProtection.PRIVACY)
                 .setFileSystemMaxCacheSize(1010);
 
         assertFullMapping(properties, expected);
+    }
+
+    @Test
+    public void testHdfsDataTranserProtectionFromString()
+    {
+        assertThat(HdfsDataTranserProtection.fromString("none")).isEqualTo(HdfsDataTranserProtection.NONE);
+        assertThat(HdfsDataTranserProtection.fromString("authentication")).isEqualTo(HdfsDataTranserProtection.AUTHENTICATION);
+        assertThat(HdfsDataTranserProtection.fromString("integrity")).isEqualTo(HdfsDataTranserProtection.INTEGRITY);
+        assertThat(HdfsDataTranserProtection.fromString("privacy")).isEqualTo(HdfsDataTranserProtection.PRIVACY);
     }
 }

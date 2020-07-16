@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HostAndPort;
 import io.airlift.units.Duration;
 import io.prestosql.hadoop.SocksSocketFactory;
+import io.prestosql.plugin.hive.HdfsConfig.HdfsDataTranserProtection;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.client.HdfsClientConfigKeys;
 import org.apache.hadoop.net.DNSToSwitchMapping;
@@ -58,6 +59,7 @@ public class HdfsConfigurationInitializer
     private final int fileSystemMaxCacheSize;
     private final Set<ConfigurationInitializer> configurationInitializers;
     private final boolean wireEncryptionEnabled;
+    private final HdfsDataTranserProtection hdfsDataTransferProtection;
 
     @VisibleForTesting
     public HdfsConfigurationInitializer(HdfsConfig hdfsConfig)
@@ -80,7 +82,7 @@ public class HdfsConfigurationInitializer
         this.resourcesConfiguration = readConfiguration(config.getResourceConfigFiles());
         this.fileSystemMaxCacheSize = config.getFileSystemMaxCacheSize();
         this.wireEncryptionEnabled = config.isWireEncryptionEnabled();
-
+        this.hdfsDataTransferProtection = config.getHdfsDataTransferProtection();
         this.configurationInitializers = ImmutableSet.copyOf(requireNonNull(configurationInitializers, "configurationInitializers is null"));
     }
 
@@ -114,6 +116,15 @@ public class HdfsConfigurationInitializer
         if (wireEncryptionEnabled) {
             config.set(HADOOP_RPC_PROTECTION, "privacy");
             config.setBoolean("dfs.encrypt.data.transfer", true);
+        }
+
+        if (hdfsDataTransferProtection != HdfsDataTranserProtection.NONE) {
+            config.set("dfs.data.transfer.protection", hdfsDataTransferProtection.getHdfsConfigValue());
+        }
+
+        if (hdfsDataTransferProtection == HdfsDataTranserProtection.PRIVACY) {
+            // TODO: should we set it for hdfsDataTransferProtection==AUTHENTICATION/INTEGRITY too?
+            config.set(HADOOP_RPC_PROTECTION, "privacy");
         }
 
         config.setInt("fs.cache.max-size", fileSystemMaxCacheSize);

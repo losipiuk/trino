@@ -35,6 +35,31 @@ import static java.util.Objects.requireNonNull;
 
 public class HdfsConfig
 {
+    public enum HdfsDataTranserProtection
+    {
+        NONE(""),
+        AUTHENTICATION("authentication"),
+        INTEGRITY("integrity"),
+        PRIVACY("privacy");
+
+        private final String hdfsConfigValue;
+
+        HdfsDataTranserProtection(String hdfsConfigValue)
+        {
+            this.hdfsConfigValue = hdfsConfigValue;
+        }
+
+        public String getHdfsConfigValue()
+        {
+            return hdfsConfigValue;
+        }
+
+        public static HdfsDataTranserProtection fromString(String value)
+        {
+            return HdfsDataTranserProtection.valueOf(value.toUpperCase());
+        }
+    }
+
     private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
     private List<File> resourceConfigFiles = ImmutableList.of();
@@ -48,6 +73,7 @@ public class HdfsConfig
     private String domainSocketPath;
     private HostAndPort socksProxy;
     private boolean wireEncryptionEnabled;
+    private HdfsDataTranserProtection hdfsDataTransferProtection = HdfsDataTranserProtection.NONE;
     private int fileSystemMaxCacheSize = 1000;
 
     @NotNull
@@ -201,6 +227,20 @@ public class HdfsConfig
     public HdfsConfig setWireEncryptionEnabled(boolean wireEncryptionEnabled)
     {
         this.wireEncryptionEnabled = wireEncryptionEnabled;
+        return this;
+    }
+
+    @NotNull
+    public HdfsDataTranserProtection getHdfsDataTransferProtection()
+    {
+        return hdfsDataTransferProtection;
+    }
+
+    @Config("hive.hdfs.data-transfer-protection")
+    @ConfigDescription("Should match value of dfs.data.transfer.protection used in Hadoop cluster")
+    public HdfsConfig setHdfsDataTransferProtection(HdfsDataTranserProtection hdfsDataTransferProtection)
+    {
+        this.hdfsDataTransferProtection = hdfsDataTransferProtection;
         return this;
     }
 
