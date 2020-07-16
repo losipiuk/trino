@@ -183,14 +183,7 @@ jobs:
           - config-hdp3
           - config-cdh5
         suite:
-          - suite-1
-          - suite-2
           - suite-3
-          # suite-4 does not exist
-          - suite-5
-          - suite-6-non-generic
-          - suite-7-non-generic
-          - suite-8-non-generic
         exclude:
           - config: config-hdp3
             suite: suite-6-non-generic
