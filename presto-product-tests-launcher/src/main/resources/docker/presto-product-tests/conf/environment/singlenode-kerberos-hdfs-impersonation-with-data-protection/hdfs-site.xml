@@ -82,8 +82,24 @@
         <value>HTTP_ONLY</value>
     </property>
 
+    <!-- Data communication protection -->
     <property>
         <name>dfs.data.transfer.protection</name>
         <value>privacy</value>
+    </property>
+
+    <property>
+        <name>dfs.encrypt.data.transfer.algorithm</name>
+        <value>3des</value>
+    </property>
+
+    <property>
+        <name>dfs.encrypt.data.transfer.cipher.suites</name>
+        <value>AES/CTR/NoPadding</value>
+    </property>
+
+    <property>
+        <name>dfs.encrypt.data.transfer.cipher.key.bitlength</name>
+        <value>256</value>
     </property>
 </configuration>
