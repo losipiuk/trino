@@ -38,6 +38,8 @@ import io.prestosql.spi.Node;
 import io.prestosql.spi.NodeManager;
 import io.prestosql.spi.PrestoException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.PrestoFileSystemCache;
+import org.apache.hadoop.hdfs.util.ByteArrayManager;
 
 import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
@@ -207,6 +209,19 @@ public class RubixInitializer
     {
         setCacheDataEnabled(configuration, false);
         setCacheKey(configuration, "rubix_disabled");
+    }
+
+    public enum ConfigurationOwner {
+        PRESTO,
+        RUBIX,
+    }
+
+    public static ConfigurationOwner getConfigurationOwner(Configuration configuration)
+    {
+        if (configuration.get(PrestoFileSystemCache.CACHE_KEY, "").endsWith("|rubix_internal")) {
+            return ConfigurationOwner.RUBIX;
+        }
+        return ConfigurationOwner.PRESTO;
     }
 
     @VisibleForTesting
