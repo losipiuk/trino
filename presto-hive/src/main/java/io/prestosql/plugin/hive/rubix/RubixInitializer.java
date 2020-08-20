@@ -201,8 +201,8 @@ public class RubixInitializer
             return;
         }
 
-        updateRubixConfiguration(configuration);
         setCacheKey(configuration, "rubix_enabled");
+        updateRubixConfiguration(configuration);
     }
 
     public void disableRubix(Configuration configuration)
@@ -280,8 +280,8 @@ public class RubixInitializer
         Configuration configuration = getInitialConfiguration();
         // Perform standard HDFS configuration initialization.
         hdfsConfigurationInitializer.initializeConfiguration(configuration);
-        updateRubixConfiguration(configuration);
         setCacheKey(configuration, "rubix_internal");
+        updateRubixConfiguration(configuration);
 
         return configuration;
     }
