@@ -22,6 +22,7 @@ import io.prestosql.testng.services.Flaky;
 import io.prestosql.tests.hive.util.TemporaryHiveTable;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.thrift.TException;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -42,6 +43,7 @@ import static io.prestosql.tempto.assertions.QueryAssert.assertThat;
 import static io.prestosql.tempto.query.QueryExecutor.query;
 import static io.prestosql.tests.TestGroups.HIVE_TRANSACTIONAL;
 import static io.prestosql.tests.TestGroups.STORAGE_FORMATS;
+import static io.prestosql.tests.hive.ACIDTestHelper.simulateAbortedHiveTransaction;
 import static io.prestosql.tests.hive.TestHiveTransactionalTable.CompactionMode.MAJOR;
 import static io.prestosql.tests.hive.TestHiveTransactionalTable.CompactionMode.MINOR;
 import static io.prestosql.tests.hive.TransactionalTableType.ACID;
@@ -353,6 +355,64 @@ public class TestHiveTransactionalTable
 
             assertThat(() -> query("INSERT INTO " + tableName + " VALUES (1,2,3)")).failsWithMessageMatching(".*Writes to Hive transactional tables are not supported.*");
         }
+    }
+
+    @Test(dataProvider = "isTablePartitioned", groups = HIVE_TRANSACTIONAL)
+    public void testFilesForAbortedTransactionsIgnored(boolean isPartitioned)
+            throws TException
+    {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+
+        String tableName = "test_aborted_transaction_table_partitioned" + (isPartitioned ? "_partitioned" : "");
+        onHive().executeQuery("" +
+                "CREATE TABLE " + tableName + " (col INT) " +
+                (isPartitioned ? "PARTITIONED BY (part_col INT) " : "") +
+                "STORED AS ORC " + "TBLPROPERTIES ('transactional'='true')");
+
+        try {
+            String hivePartition = isPartitioned ? " PARTITION (part_col=2) " : "";
+            String predicate = isPartitioned ? " WHERE part_col = 2 " : "";
+
+            onHive().executeQuery("INSERT OVERWRITE TABLE " + tableName + hivePartition + " select 1");
+
+            String selectFromOnePartitionsSql = "SELECT col FROM " + tableName + predicate + " ORDER BY COL";
+            QueryResult onePartitionQueryResult = query(selectFromOnePartitionsSql);
+            assertThat(onePartitionQueryResult).containsOnly(row(1));
+
+            onHive().executeQuery("INSERT INTO TABLE " + tableName + hivePartition + " select 2");
+            onePartitionQueryResult = query(selectFromOnePartitionsSql);
+            assertThat(onePartitionQueryResult).containsExactly(row(1), row(2));
+
+            onHive().executeQuery("INSERT OVERWRITE TABLE " + tableName + hivePartition + " select 3");
+            onePartitionQueryResult = query(selectFromOnePartitionsSql);
+            assertThat(onePartitionQueryResult).containsOnly(row(3));
+
+            onHive().executeQuery("INSERT INTO TABLE " + tableName + hivePartition + " select 4");
+            onePartitionQueryResult = query(selectFromOnePartitionsSql);
+            assertThat(onePartitionQueryResult).containsExactly(row(3), row(4));
+
+            // Simulate aborted transaction in Hive which has left behind a write directory and file
+            simulateAbortedHiveTransaction("default", tableName, "part_col=2");
+
+            // Above simulation would have written to the part_col a new delta directory that corresponds to a
+            // aborted txn but it should not be read
+            onePartitionQueryResult = query(selectFromOnePartitionsSql);
+            assertThat(onePartitionQueryResult).containsExactly(row(3), row(4));
+        }
+        finally {
+            onHive().executeQuery("DROP TABLE " + tableName);
+        }
+    }
+
+    @DataProvider
+    public Object[][] isTablePartitioned()
+    {
+        return new Object[][] {
+                {true},
+                {false}
+        };
     }
 
     @DataProvider
