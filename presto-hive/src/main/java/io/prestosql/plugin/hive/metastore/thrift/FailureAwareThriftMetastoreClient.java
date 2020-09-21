@@ -14,6 +14,7 @@
 package io.prestosql.plugin.hive.metastore.thrift;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.hive.metastore.api.AllocateTableWriteIdsRequest;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
@@ -28,6 +29,7 @@ import org.apache.hadoop.hive.metastore.api.PrivilegeBag;
 import org.apache.hadoop.hive.metastore.api.Role;
 import org.apache.hadoop.hive.metastore.api.RolePrincipalGrant;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.TxnToWriteId;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -393,6 +395,20 @@ public class FailureAwareThriftMetastoreClient
             throws TException
     {
         return runWithHandle(() -> delegate.getDelegationToken(userName));
+    }
+
+    @Override
+    public void rollbackTransaction(long transactionId)
+            throws TException
+    {
+        runWithHandle(() -> delegate.rollbackTransaction(transactionId));
+    }
+
+    @Override
+    public List<TxnToWriteId> allocateTableWriteIdsBatchIntr(AllocateTableWriteIdsRequest request)
+            throws TException
+    {
+        return runWithHandle(() -> delegate.allocateTableWriteIdsBatchIntr(request));
     }
 
     private <T> T runWithHandle(ThrowingSupplier<T> supplier)
