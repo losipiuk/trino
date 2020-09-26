@@ -14,7 +14,6 @@
 package io.prestosql.plugin.hive.metastore.thrift;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.hadoop.hive.metastore.api.AllocateTableWriteIdsRequest;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
@@ -398,17 +397,17 @@ public class FailureAwareThriftMetastoreClient
     }
 
     @Override
-    public void rollbackTransaction(long transactionId)
+    public void abortTransaction(long transactionId)
             throws TException
     {
-        runWithHandle(() -> delegate.rollbackTransaction(transactionId));
+        runWithHandle(() -> delegate.abortTransaction(transactionId));
     }
 
     @Override
-    public List<TxnToWriteId> allocateTableWriteIdsBatchIntr(AllocateTableWriteIdsRequest request)
+    public List<TxnToWriteId> allocateTableWriteIds(String database, String tableName, List<Long> transactionIds)
             throws TException
     {
-        return runWithHandle(() -> delegate.allocateTableWriteIdsBatchIntr(request));
+        return runWithHandle(() -> delegate.allocateTableWriteIds(database, tableName, transactionIds));
     }
 
     private <T> T runWithHandle(ThrowingSupplier<T> supplier)

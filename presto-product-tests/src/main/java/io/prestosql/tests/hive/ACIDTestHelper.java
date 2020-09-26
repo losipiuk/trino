@@ -17,9 +17,7 @@ import com.google.common.net.HostAndPort;
 import io.prestosql.plugin.hive.metastore.thrift.NoHiveMetastoreAuthentication;
 import io.prestosql.plugin.hive.metastore.thrift.ThriftHiveMetastoreClient;
 import io.prestosql.plugin.hive.metastore.thrift.Transport;
-import io.prestosql.tempto.context.ThreadLocalTestContextHolder;
-import io.prestosql.tempto.query.QueryExecutor;
-import org.apache.hadoop.hive.metastore.api.AllocateTableWriteIdsRequest;
+import io.prestosql.tests.utils.QueryExecutors;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.thrift.TException;
@@ -40,40 +38,32 @@ public final class ACIDTestHelper
     {
     }
 
-    // This simulates a aborted transaction which leaves behind a file in a partition of a table as follows:
-    // 1. Open Txn
-    // 2. Rollback Txn
-    // 3. Create a new table with location as the given partition location + delta directory for the rolled back transaction
-    // 4. Insert something to it which will create a file for this table
+    // Simulates an aborted transaction which leaves behind a file in a table partition with some data
     public static void simulateAbortedHiveTransaction(String database, String tableName, String partitionSpec)
             throws TException
     {
         ThriftHiveMetastoreClient client = createMetastoreClient();
         try {
-            // Step 1
             long transaction = client.openTransaction("test");
 
-            AllocateTableWriteIdsRequest allocateTableWriteIdsRequest = new AllocateTableWriteIdsRequest(database, tableName);
-            allocateTableWriteIdsRequest.setTxnIds(Collections.singletonList(transaction));
-            long writeId = client.allocateTableWriteIdsBatchIntr(allocateTableWriteIdsRequest).get(0).getWriteId();
+            long writeId = client.allocateTableWriteIds(database, tableName, Collections.singletonList(transaction)).get(0).getWriteId();
 
-            // Step 2
-            client.rollbackTransaction(transaction);
+            // Rollback transaction which leaves behind a delta directory
+            client.abortTransaction(transaction);
 
-            // Step 3
+            // Create a new external table with location as the given partition location + delta directory for the rolled back transaction
             Table table = client.getTableWithCapabilities(database, tableName);
             String tableLocation = table.getSd().getLocation();
             String partitionLocation = tableLocation.endsWith("/") ? tableLocation + partitionSpec : tableLocation + "/" + partitionSpec;
             String deltaLocation = partitionLocation + "/" + AcidUtils.deltaSubdir(writeId, writeId, 0);
-            QueryExecutor hiveQueryExecutor = ThreadLocalTestContextHolder.testContext().getDependency(QueryExecutor.class, "hive");
 
             String tmpTableName = getNewTableName();
-            hiveQueryExecutor.executeQuery(String.format("CREATE EXTERNAL TABLE %s (col string) stored as ORC location '%s'", tmpTableName, deltaLocation));
+            QueryExecutors.onHive().executeQuery(String.format("CREATE EXTERNAL TABLE %s (col string) STORED AS ORC LOCATION '%s'", tmpTableName, deltaLocation));
 
-            // Step 4
-            hiveQueryExecutor.executeQuery(String.format("INSERT INTO TABLE %s SELECT 'a'", tmpTableName));
-            assertThat(hiveQueryExecutor.executeQuery(String.format("SELECT * FROM %s", tmpTableName))).containsOnly(row("a"));
-            hiveQueryExecutor.executeQuery(String.format("DROP TABLE %s", tmpTableName));
+            // Insert data to the external table
+            QueryExecutors.onHive().executeQuery(String.format("INSERT INTO TABLE %s SELECT 'a'", tmpTableName));
+            assertThat(QueryExecutors.onHive().executeQuery(String.format("SELECT * FROM %s", tmpTableName))).containsOnly(row("a"));
+            QueryExecutors.onHive().executeQuery(String.format("DROP TABLE %s", tmpTableName));
         }
         finally {
             client.close();

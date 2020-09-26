@@ -13,7 +13,6 @@
  */
 package io.prestosql.plugin.hive.metastore.thrift;
 
-import org.apache.hadoop.hive.metastore.api.AllocateTableWriteIdsRequest;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
@@ -164,7 +163,7 @@ public interface ThriftMetastoreClient
     void commitTransaction(long transactionId)
             throws TException;
 
-    default void rollbackTransaction(long transactionId)
+    default void abortTransaction(long transactionId)
             throws TException
     {
         throw new UnsupportedOperationException();
@@ -188,7 +187,7 @@ public interface ThriftMetastoreClient
     String getDelegationToken(String userName)
             throws TException;
 
-    default List<TxnToWriteId> allocateTableWriteIdsBatchIntr(AllocateTableWriteIdsRequest rqst)
+    default List<TxnToWriteId> allocateTableWriteIds(String database, String tableName, List<Long> transactionIds)
             throws TException
     {
         throw new UnsupportedOperationException();

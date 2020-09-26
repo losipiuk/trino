@@ -465,10 +465,10 @@ public class ThriftHiveMetastoreClient
     }
 
     @Override
-    public void rollbackTransaction(long txnId)
+    public void abortTransaction(long transactionId)
             throws TException
     {
-        client.abort_txn(new AbortTxnRequest(txnId));
+        client.abort_txn(new AbortTxnRequest(transactionId));
     }
 
     @Override
@@ -524,9 +524,11 @@ public class ThriftHiveMetastoreClient
 
     // Only for product tests, Presto does not support writing to Hive transactional tables yet.
     @Override
-    public List<TxnToWriteId> allocateTableWriteIdsBatchIntr(AllocateTableWriteIdsRequest rqst)
+    public List<TxnToWriteId> allocateTableWriteIds(String database, String tableName, List<Long> transactionIds)
             throws TException
     {
-        return client.allocate_table_write_ids(rqst).getTxnToWriteIds();
+        AllocateTableWriteIdsRequest request = new AllocateTableWriteIdsRequest(database, tableName);
+        request.setTxnIds(transactionIds);
+        return client.allocate_table_write_ids(request).getTxnToWriteIds();
     }
 }

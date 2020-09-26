@@ -374,32 +374,24 @@ public class TestHiveTransactionalTable
         try {
             String hivePartition = isPartitioned ? " PARTITION (part_col=2) " : "";
             String predicate = isPartitioned ? " WHERE part_col = 2 " : "";
-
-            onHive().executeQuery("INSERT OVERWRITE TABLE " + tableName + hivePartition + " select 1");
-
             String selectFromOnePartitionsSql = "SELECT col FROM " + tableName + predicate + " ORDER BY COL";
+
+            onHive().executeQuery("INSERT OVERWRITE TABLE " + tableName + hivePartition + " SELECT 1");
+
+            onHive().executeQuery("INSERT INTO TABLE " + tableName + hivePartition + " SELECT 2");
             QueryResult onePartitionQueryResult = query(selectFromOnePartitionsSql);
-            assertThat(onePartitionQueryResult).containsOnly(row(1));
-
-            onHive().executeQuery("INSERT INTO TABLE " + tableName + hivePartition + " select 2");
-            onePartitionQueryResult = query(selectFromOnePartitionsSql);
             assertThat(onePartitionQueryResult).containsExactly(row(1), row(2));
-
-            onHive().executeQuery("INSERT OVERWRITE TABLE " + tableName + hivePartition + " select 3");
-            onePartitionQueryResult = query(selectFromOnePartitionsSql);
-            assertThat(onePartitionQueryResult).containsOnly(row(3));
-
-            onHive().executeQuery("INSERT INTO TABLE " + tableName + hivePartition + " select 4");
-            onePartitionQueryResult = query(selectFromOnePartitionsSql);
-            assertThat(onePartitionQueryResult).containsExactly(row(3), row(4));
 
             // Simulate aborted transaction in Hive which has left behind a write directory and file
             simulateAbortedHiveTransaction("default", tableName, "part_col=2");
 
+            // Insert data to create a valid delta
+            onHive().executeQuery("INSERT INTO TABLE " + tableName + hivePartition + " SELECT 3");
+
             // Above simulation would have written to the part_col a new delta directory that corresponds to a
             // aborted txn but it should not be read
             onePartitionQueryResult = query(selectFromOnePartitionsSql);
-            assertThat(onePartitionQueryResult).containsExactly(row(3), row(4));
+            assertThat(onePartitionQueryResult).containsExactly(row(1), row(2), row(3));
         }
         finally {
             onHive().executeQuery("DROP TABLE " + tableName);
