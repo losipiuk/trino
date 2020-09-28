@@ -27,6 +27,8 @@ import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import javax.inject.Inject;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -43,7 +45,6 @@ import static io.prestosql.tempto.assertions.QueryAssert.assertThat;
 import static io.prestosql.tempto.query.QueryExecutor.query;
 import static io.prestosql.tests.TestGroups.HIVE_TRANSACTIONAL;
 import static io.prestosql.tests.TestGroups.STORAGE_FORMATS;
-import static io.prestosql.tests.hive.ACIDTestHelper.simulateAbortedHiveTransaction;
 import static io.prestosql.tests.hive.TestHiveTransactionalTable.CompactionMode.MAJOR;
 import static io.prestosql.tests.hive.TestHiveTransactionalTable.CompactionMode.MINOR;
 import static io.prestosql.tests.hive.TransactionalTableType.ACID;
@@ -102,6 +103,9 @@ public class TestHiveTransactionalTable
     {
         doTestReadFullAcid(false, BucketingType.BUCKETED_V2);
     }
+
+    @Inject
+    private ACIDTestHelper acidTestHelper;
 
     private void doTestReadFullAcid(boolean isPartitioned, BucketingType bucketingType)
     {
@@ -383,7 +387,7 @@ public class TestHiveTransactionalTable
             assertThat(onePartitionQueryResult).containsExactly(row(1), row(2));
 
             // Simulate aborted transaction in Hive which has left behind a write directory and file
-            simulateAbortedHiveTransaction("default", tableName, "part_col=2");
+            acidTestHelper.simulateAbortedHiveTransaction("default", tableName, "part_col=2");
 
             // Insert data to create a valid delta
             onHive().executeQuery("INSERT INTO TABLE " + tableName + hivePartition + " SELECT 3");

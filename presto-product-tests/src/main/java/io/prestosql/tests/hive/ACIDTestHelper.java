@@ -22,6 +22,9 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.thrift.TException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import java.net.URI;
 import java.util.Collections;
 import java.util.Optional;
@@ -34,12 +37,16 @@ public final class ACIDTestHelper
 {
     private static final String LOCALHOST = "localhost";
 
-    private ACIDTestHelper()
-    {
-    }
+    @Inject
+    @Named("databases.hive.metastore.host")
+    private String metastoreHost;
+
+    @Inject
+    @Named("databases.hive.metastore.port")
+    private int metastorePort;
 
     // Simulates an aborted transaction which leaves behind a file in a table partition with some data
-    public static void simulateAbortedHiveTransaction(String database, String tableName, String partitionSpec)
+    public void simulateAbortedHiveTransaction(String database, String tableName, String partitionSpec)
             throws TException
     {
         ThriftHiveMetastoreClient client = createMetastoreClient();
@@ -70,15 +77,16 @@ public final class ACIDTestHelper
         }
     }
 
-    private static String getNewTableName()
+    private String getNewTableName()
     {
         return "table_" + UUID.randomUUID().toString().replace('-', '_');
     }
 
-    private static ThriftHiveMetastoreClient createMetastoreClient()
+    private ThriftHiveMetastoreClient createMetastoreClient()
             throws TException
     {
-        URI metastore = URI.create("thrift://hadoop-master:9083");
+        URI metastore = URI.create("thrift://" + metastoreHost + ":" + metastorePort);
+        System.out.println("XXXXXXXXXXXXXXXXXXXXXx " + metastore);
         return new ThriftHiveMetastoreClient(
                 Transport.create(
                         HostAndPort.fromParts(metastore.getHost(), metastore.getPort()),
