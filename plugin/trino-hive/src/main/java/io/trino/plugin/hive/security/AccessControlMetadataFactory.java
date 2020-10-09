@@ -17,5 +17,7 @@ import io.trino.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 
 public interface AccessControlMetadataFactory
 {
-    AccessControlMetadata create(SemiTransactionalHiveMetastore metastore);
+    // TODO get rid of SqlStandardAccessControlMetadataMetastore. Possibly replace with something generic
+    // not tied to selected access control implementation. E.g. HiveTransactionHandle.
+    AccessControlMetadata create(SqlStandardAccessControlMetadataMetastore metastore);
 }

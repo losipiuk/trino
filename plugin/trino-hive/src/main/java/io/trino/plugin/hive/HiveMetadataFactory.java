@@ -21,6 +21,7 @@ import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.plugin.hive.metastore.MetastoreConfig;
 import io.trino.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 import io.trino.plugin.hive.security.AccessControlMetadataFactory;
+import io.trino.plugin.hive.security.SemiTransactionalHiveSqlStandardAccessControlMetadataMetastore;
 import io.trino.plugin.hive.statistics.MetastoreHiveStatisticsProvider;
 import io.trino.spi.type.TypeManager;
 
@@ -185,6 +186,6 @@ public class HiveMetadataFactory
                 partitionUpdateCodec,
                 trinoVersion,
                 new MetastoreHiveStatisticsProvider(metastore),
-                accessControlMetadataFactory.create(metastore));
+                accessControlMetadataFactory.create(new SemiTransactionalHiveSqlStandardAccessControlMetadataMetastore(metastore)));
     }
 }
