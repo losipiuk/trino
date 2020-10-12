@@ -286,22 +286,6 @@ public final class ThriftMetastoreUtil
                         .map(role -> new HivePrincipal(ROLE, role)));
     }
 
-    public static Stream<HivePrivilegeInfo> listApplicableTablePrivileges(SemiTransactionalHiveMetastore metastore, String databaseName, String tableName, ConnectorIdentity identity)
-    {
-        String user = identity.getUser();
-        HivePrincipal userPrincipal = new HivePrincipal(USER, user);
-        Stream<HivePrincipal> principals = Stream.concat(
-                Stream.of(userPrincipal),
-                listApplicableRoles(metastore, userPrincipal)
-                        .map(role -> new HivePrincipal(ROLE, role)));
-        return listTablePrivileges(metastore, new HiveIdentity(identity), databaseName, tableName, principals);
-    }
-
-    private static Stream<HivePrivilegeInfo> listTablePrivileges(SemiTransactionalHiveMetastore metastore, HiveIdentity identity, String databaseName, String tableName, Stream<HivePrincipal> principals)
-    {
-        return principals.flatMap(principal -> metastore.listTablePrivileges(identity, databaseName, tableName, Optional.of(principal)).stream());
-    }
-
     public static boolean isRoleEnabled(ConnectorIdentity identity, Function<HivePrincipal, Set<RoleGrant>> listRoleGrants, String role)
     {
         if (role.equals(PUBLIC_ROLE_NAME)) {
