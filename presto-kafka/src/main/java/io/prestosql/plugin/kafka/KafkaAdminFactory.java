@@ -14,13 +14,15 @@
 
 package io.prestosql.plugin.kafka;
 
+import com.google.common.collect.ImmutableMap;
+import io.prestosql.plugin.kafka.KafkaSecurityModules.ForKafkaSecurity;
 import io.prestosql.spi.HostAddress;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
 
 import javax.inject.Inject;
 
-import java.util.Optional;
+import java.util.Map;
 import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
@@ -30,19 +32,14 @@ import static org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS
 public class KafkaAdminFactory
 {
     private final KafkaConfig kafkaConfig;
-    private final Properties kafkaSecurityConfig;
+    private final Map<String, Object> kafkaSecurityProperties;
 
     @Inject
-    public KafkaAdminFactory(KafkaConfig kafkaConfig, Optional<KafkaSecurityConfig> kafkaSecurityConfig)
+    public KafkaAdminFactory(KafkaConfig kafkaConfig, @ForKafkaSecurity Map<String, Object> kafkaSecurityProperties)
     {
-        requireNonNull(kafkaConfig, "kafkaConfig is null");
-        this.kafkaConfig = kafkaConfig;
-        if (kafkaSecurityConfig.isPresent()) {
-            this.kafkaSecurityConfig = kafkaSecurityConfig.get().getKafkaClientProperties();
-        }
-        else {
-            this.kafkaSecurityConfig = new Properties();
-        }
+        this.kafkaConfig = requireNonNull(kafkaConfig, "kafkaConfig is null");
+        this.kafkaSecurityProperties = ImmutableMap.copyOf(kafkaSecurityProperties);
+        // TODO build final properties already in the constructor????
     }
 
     public AdminClient create()
@@ -56,7 +53,7 @@ public class KafkaAdminFactory
         properties.setProperty(BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getNodes().stream()
                 .map(HostAddress::toString)
                 .collect(joining(",")));
-        properties.putAll(kafkaSecurityConfig);
+        properties.putAll(kafkaSecurityProperties);
         return properties;
     }
 }

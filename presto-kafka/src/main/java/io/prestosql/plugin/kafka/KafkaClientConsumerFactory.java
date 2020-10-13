@@ -13,13 +13,15 @@
  */
 package io.prestosql.plugin.kafka;
 
+import com.google.common.collect.ImmutableMap;
 import io.airlift.units.DataSize;
+import io.prestosql.plugin.kafka.KafkaSecurityModules.ForKafkaSecurity;
 import io.prestosql.spi.HostAddress;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import javax.inject.Inject;
 
-import java.util.Optional;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -37,19 +39,14 @@ public class KafkaClientConsumerFactory
     private final KafkaConfig kafkaConfig;
     private final Set<HostAddress> nodes;
     private final DataSize kafkaBufferSize;
-    private final Properties securityConfig;
+    private final Map<String, Object> kafkaSecurityProperties;
 
     @Inject
-    public KafkaClientConsumerFactory(KafkaConfig kafkaConfig, Optional<KafkaSecurityConfig> securityConfig)
+    public KafkaClientConsumerFactory(KafkaConfig kafkaConfig, @ForKafkaSecurity Map<String, Object> kafkaSecurityProperties)
     {
-        requireNonNull(kafkaConfig, "kafkaConfig is null");
-        if (securityConfig.isPresent()) {
-            this.securityConfig = securityConfig.get().getKafkaClientProperties();
-        }
-        else {
-            this.securityConfig = new Properties();
-        }
-        this.kafkaConfig = kafkaConfig;
+        this.kafkaConfig = requireNonNull(kafkaConfig, "kafkaConfig is null");
+        this.kafkaSecurityProperties = ImmutableMap.copyOf(kafkaSecurityProperties);
+        // TODO build final properties here already instead of in configure
         nodes = kafkaConfig.getNodes();
         kafkaBufferSize = kafkaConfig.getKafkaBufferSize();
     }
@@ -66,7 +63,7 @@ public class KafkaClientConsumerFactory
         properties.setProperty(RECEIVE_BUFFER_CONFIG, Long.toString(kafkaBufferSize.toBytes()));
         properties.setProperty(ENABLE_AUTO_COMMIT_CONFIG, Boolean.toString(false));
         properties.setProperty("security.protocol", kafkaConfig.getSecurityProtocol().name);
-        properties.putAll(securityConfig);
+        properties.putAll(kafkaSecurityProperties);
         return properties;
     }
 }
