@@ -28,6 +28,7 @@ public class RetryAnnotationTransformer
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod)
     {
+        log.info("XXXXXXXX Transforming %s.%s", testClass, testMethod);
         if (testMethod != null) {
             log.debug("Instrumenting method %s with %s.", testMethod.getName(), FlakyTestRetryAnalyzer.class.getSimpleName());
             annotation.setRetryAnalyzer(FlakyTestRetryAnalyzer.class);
