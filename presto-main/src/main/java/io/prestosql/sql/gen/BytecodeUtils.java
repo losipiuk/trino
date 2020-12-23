@@ -34,6 +34,7 @@ import io.prestosql.spi.block.BlockBuilder;
 import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.function.InvocationConvention;
 import io.prestosql.spi.function.InvocationConvention.InvocationArgumentConvention;
+import io.prestosql.spi.type.LongTimestamp;
 import io.prestosql.spi.type.Type;
 import io.prestosql.sql.gen.InputReferenceCompiler.InputReferenceNode;
 import io.prestosql.type.FunctionType;
@@ -349,6 +350,9 @@ public final class BytecodeUtils
 
         if (functionMetadata.isNullable()) {
             block.append(unboxPrimitiveIfNecessary(scope, returnType));
+        }
+        if (functionMetadata.getSignature().getReturnType().getBase().equals("timestamp")) {
+            block.checkCast(LongTimestamp.class);
         }
         block.visitLabel(end);
 
