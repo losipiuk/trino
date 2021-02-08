@@ -173,6 +173,7 @@ public class GenericHiveRecordCursor<K, V extends Writable>
             StructField field = rowInspector.getStructFieldRef(column.getName());
             structFields[i] = field;
             fieldInspectors[i] = field.getFieldObjectInspector();
+            throw new RuntimeException("blah");
         }
     }
 
