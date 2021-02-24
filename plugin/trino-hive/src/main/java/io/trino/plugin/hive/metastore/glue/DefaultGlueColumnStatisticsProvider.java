@@ -28,6 +28,8 @@ import com.amazonaws.services.glue.model.GetColumnStatisticsForPartitionResult;
 import com.amazonaws.services.glue.model.GetColumnStatisticsForTableRequest;
 import com.amazonaws.services.glue.model.GetColumnStatisticsForTableResult;
 import com.amazonaws.services.glue.model.LongColumnStatisticsData;
+import com.amazonaws.services.glue.model.PartitionInput;
+import com.amazonaws.services.glue.model.TableInput;
 import com.amazonaws.services.glue.model.UpdateColumnStatisticsForPartitionRequest;
 import com.amazonaws.services.glue.model.UpdateColumnStatisticsForTableRequest;
 import com.google.common.collect.ImmutableList;
@@ -49,6 +51,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Sets.difference;
@@ -60,6 +63,7 @@ import static io.trino.plugin.hive.metastore.glue.converter.GlueStatConverter.to
 import static io.trino.plugin.hive.metastore.thrift.ThriftMetastoreUtil.getHiveBasicStatistics;
 import static java.util.concurrent.CompletableFuture.allOf;
 import static java.util.concurrent.CompletableFuture.runAsync;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class DefaultGlueColumnStatisticsProvider
@@ -204,7 +208,7 @@ public class DefaultGlueColumnStatisticsProvider
     }
 
     @Override
-    public void updateTableColumnStatistics(Table table, Map<String, HiveColumnStatistics> updatedTableColumnStatistics)
+    public Function<TableInput, TableInput> updateTableColumnStatistics(Table table, Map<String, HiveColumnStatistics> updatedTableColumnStatistics)
     {
         try {
             HiveBasicStatistics tableStats = getHiveBasicStatistics(table.getParameters());
@@ -245,10 +249,11 @@ public class DefaultGlueColumnStatisticsProvider
         catch (RuntimeException ex) {
             throw new TrinoException(HIVE_METASTORE_ERROR, ex);
         }
+        return identity();
     }
 
     @Override
-    public void updatePartitionStatistics(Partition partition, Map<String, HiveColumnStatistics> updatedColumnStatistics)
+    public Function<PartitionInput, PartitionInput> updatePartitionStatistics(Partition partition, Map<String, HiveColumnStatistics> updatedColumnStatistics)
     {
         try {
             HiveBasicStatistics partitionStats = getHiveBasicStatistics(partition.getParameters());
@@ -290,6 +295,7 @@ public class DefaultGlueColumnStatisticsProvider
         catch (RuntimeException ex) {
             throw new TrinoException(HIVE_METASTORE_ERROR, ex);
         }
+        return identity();
     }
 
     private List<String> getAllColumns(Table table)

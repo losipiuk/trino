@@ -32,6 +32,7 @@ import io.trino.plugin.hive.metastore.glue.GlueColumnStatisticsProvider;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.plugin.hive.metastore.thrift.ThriftMetastoreUtil.updateStatisticsParameters;
@@ -68,7 +69,8 @@ public final class GlueInputConverter
     {
         PartitionInput input = convertPartition(partitionWithStatistics.getPartition());
         PartitionStatistics statistics = partitionWithStatistics.getStatistics();
-        columnStatisticsProvider.updatePartitionStatistics(partitionWithStatistics.getPartition(), statistics.getColumnStatistics());
+        Function<PartitionInput, PartitionInput> partitionInputMutator = columnStatisticsProvider.updatePartitionStatistics(partitionWithStatistics.getPartition(), statistics.getColumnStatistics());
+        input = partitionInputMutator.apply(input);
         input.setParameters(updateStatisticsParameters(input.getParameters(), statistics.getBasicStatistics()));
         return input;
     }

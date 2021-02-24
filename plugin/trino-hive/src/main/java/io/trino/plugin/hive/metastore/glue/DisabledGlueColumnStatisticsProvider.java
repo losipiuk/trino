@@ -13,6 +13,8 @@
  */
 package io.trino.plugin.hive.metastore.glue;
 
+import com.amazonaws.services.glue.model.PartitionInput;
+import com.amazonaws.services.glue.model.TableInput;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.trino.plugin.hive.metastore.HiveColumnStatistics;
@@ -24,8 +26,10 @@ import io.trino.spi.type.Type;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static java.util.function.Function.identity;
 
 public class DisabledGlueColumnStatisticsProvider
         implements GlueColumnStatisticsProvider
@@ -49,18 +53,20 @@ public class DisabledGlueColumnStatisticsProvider
     }
 
     @Override
-    public void updateTableColumnStatistics(Table table, Map<String, HiveColumnStatistics> columnStatistics)
+    public Function<TableInput, TableInput> updateTableColumnStatistics(Table table, Map<String, HiveColumnStatistics> columnStatistics)
     {
         if (!columnStatistics.isEmpty()) {
             throw new TrinoException(NOT_SUPPORTED, "Glue metastore column level statistics are disabled");
         }
+        return identity();
     }
 
     @Override
-    public void updatePartitionStatistics(Partition partition, Map<String, HiveColumnStatistics> columnStatistics)
+    public Function<PartitionInput, PartitionInput> updatePartitionStatistics(Partition partition, Map<String, HiveColumnStatistics> columnStatistics)
     {
         if (!columnStatistics.isEmpty()) {
             throw new TrinoException(NOT_SUPPORTED, "Glue metastore column level statistics are disabled");
         }
+        return identity();
     }
 }

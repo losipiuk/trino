@@ -362,12 +362,12 @@ public class GlueHiveMetastore
             TableInput tableInput = GlueInputConverter.convertTable(table);
             final Map<String, String> statisticsParameters = updateStatisticsParameters(table.getParameters(), updatedStatistics.getBasicStatistics());
             tableInput.setParameters(statisticsParameters);
-            table = Table.builder(table).setParameters(statisticsParameters).build();
+            Function<TableInput, TableInput> tableInputMutator = columnStatisticsProvider.updateTableColumnStatistics(table, updatedStatistics.getColumnStatistics());
+            tableInput = tableInputMutator.apply(tableInput);
             glueClient.updateTable(new UpdateTableRequest()
                     .withCatalogId(catalogId)
                     .withDatabaseName(databaseName)
                     .withTableInput(tableInput));
-            columnStatisticsProvider.updateTableColumnStatistics(table, updatedStatistics.getColumnStatistics());
         }
         catch (EntityNotFoundException e) {
             throw new TableNotFoundException(new SchemaTableName(databaseName, tableName));
@@ -391,14 +391,14 @@ public class GlueHiveMetastore
             PartitionInput partitionInput = GlueInputConverter.convertPartition(partition);
             final Map<String, String> updateStatisticsParameters = updateStatisticsParameters(partition.getParameters(), updatedStatistics.getBasicStatistics());
             partitionInput.setParameters(updateStatisticsParameters);
-            partition = Partition.builder(partition).setParameters(updateStatisticsParameters).build();
+            Function<PartitionInput, PartitionInput> partitionInputMutator = columnStatisticsProvider.updatePartitionStatistics(partition, updatedStatistics.getColumnStatistics());
+            partitionInput = partitionInputMutator.apply(partitionInput);
             glueClient.updatePartition(new UpdatePartitionRequest()
                     .withCatalogId(catalogId)
                     .withDatabaseName(table.getDatabaseName())
                     .withTableName(table.getTableName())
                     .withPartitionValueList(partition.getValues())
                     .withPartitionInput(partitionInput));
-            columnStatisticsProvider.updatePartitionStatistics(partition, updatedStatistics.getColumnStatistics());
         }
         catch (EntityNotFoundException e) {
             throw new PartitionNotFoundException(new SchemaTableName(table.getDatabaseName(), table.getTableName()), partitionValues);
