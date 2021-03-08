@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.jdbc;
 
+import com.google.common.base.Throwables;
 import io.trino.spi.connector.ConnectorSession;
 
 import javax.annotation.Nullable;
@@ -72,6 +73,7 @@ public final class LazyConnectionFactory
             checkState(!closed, "Connection is already closed");
             if (connection == null) {
                 connection = requireNonNull(connectionSupplier.get(), "connectionSupplier.get() is null");
+                System.out.println("OPEN XXX " + connection + " " + Throwables.getStackTraceAsString(new RuntimeException()));
             }
             return connection;
         }
@@ -82,6 +84,7 @@ public final class LazyConnectionFactory
         {
             closed = true;
             if (connection != null) {
+                System.out.println("CLOSE XXX " + connection + " " + Throwables.getStackTraceAsString(new RuntimeException()));
                 connection.close();
             }
         }
