@@ -51,6 +51,7 @@ import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.ConnectorViewDefinition;
 import io.trino.spi.connector.ConnectorViewDefinition.ViewColumn;
 import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.GroupProvider;
@@ -169,6 +170,7 @@ import io.trino.sql.tree.Statement;
 import io.trino.sql.tree.SubqueryExpression;
 import io.trino.sql.tree.SubscriptExpression;
 import io.trino.sql.tree.Table;
+import io.trino.sql.tree.TableExecute;
 import io.trino.sql.tree.TableSubquery;
 import io.trino.sql.tree.Union;
 import io.trino.sql.tree.Unnest;
@@ -970,6 +972,68 @@ class StatementAnalyzer
         protected Scope visitSetTableAuthorization(SetTableAuthorization node, Optional<Scope> scope)
         {
             return createAndAssignScope(node, scope);
+        }
+
+        @Override
+        protected Scope visitTableExecute(TableExecute node, Optional<Scope> scope)
+        {
+            Table table = node.getTable();
+            QualifiedObjectName originalName = createQualifiedObjectName(session, table, table.getName());
+            if (metadata.getView(session, originalName).isPresent()) {
+                throw semanticException(NOT_SUPPORTED, node, "ALTER TABLE EXECUTE is not supported for views");
+            }
+
+            RedirectionAwareTableHandle redirection = metadata.getRedirectionAwareTableHandle(session, originalName);
+            QualifiedObjectName tableName = redirection.getRedirectedTableName().orElse(originalName);
+            TableHandle tableHandle = redirection.getTableHandle()
+                    .orElseThrow(() -> semanticException(TABLE_NOT_FOUND, table, "Table '%s' does not exist", tableName));
+
+            // TODO add access check
+            // accessControl.check...(session.toSecurityContext(), tableName);
+
+            // TODO Maybe make check optional; does it sometimes makes sense to execute table procedure on table with row filter or column masks?
+            if (!accessControl.getRowFilters(session.toSecurityContext(), tableName).isEmpty()) {
+                throw semanticException(NOT_SUPPORTED, node, "ALTER TABLE EXECUTE is not supported for table with ROW filter");
+            }
+
+            TableMetadata tableMetadata = metadata.getTableMetadata(session, tableHandle);
+            for (ColumnMetadata tableColumn : tableMetadata.getColumns()) {
+                if (!accessControl.getColumnMasks(session.toSecurityContext(), tableName, tableColumn.getName(), tableColumn.getType()).isEmpty()) {
+                    throw semanticException(NOT_SUPPORTED, node, "ALTER TABLE EXECUTE is not supported for table with column masks");
+                }
+            }
+
+            Scope tableScope = analyze(table, scope);
+
+            CatalogName catalogName = getRequiredCatalogHandle(metadata, session, node, tableName.getCatalogName());
+            String procedureName = node.getProcedureName().getValue();
+            TableProcedureMetadata procedureMetadata = metadata.getTableProcedureRegistry().resolve(catalogName, procedureName);
+
+            // analyze WHERE
+            if (!procedureMetadata.getExecutionMode().isFilter() && node.getWhere().isPresent()) {
+                throw semanticException(NOT_SUPPORTED, node, "WHERE not supported for procedure " + procedureName);
+            }
+            node.getWhere().ifPresent(where -> analyzeWhere(node, tableScope, where));
+
+            // analyze ORDER BY
+            if (node.getOrderBy().isPresent()) {
+                throw semanticException(NOT_SUPPORTED, node, "ORDER BY not supported yet"); // TODO
+            }
+
+            // analyze WITH
+            validateProperties(node.getProperties(), scope);
+            Map<String, Object> tableProperties = metadata.getTableProceduresPropertyManager().getProperties(
+                    catalogName,
+                    procedureName,
+                    catalogName.getCatalogName(),
+                    mapFromProperties(node.getProperties()),
+                    session,
+                    metadata,
+                    accessControl,
+                    analysis.getParameters());
+            analysis.setTableExecuteProperties(tableProperties);
+
+            return createAndAssignScope(node, scope, Field.newUnqualified("rows", BIGINT));
         }
 
         @Override
