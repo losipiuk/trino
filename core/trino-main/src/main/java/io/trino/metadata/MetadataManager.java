@@ -216,6 +216,7 @@ public final class MetadataManager
     private final MaterializedViewPropertyManager materializedViewPropertyManager;
     private final ColumnPropertyManager columnPropertyManager;
     private final AnalyzePropertyManager analyzePropertyManager;
+    private final TableProceduresPropertyManager tableProceduresPropertyManager;
     private final SystemSecurityMetadata systemSecurityMetadata;
     private final TransactionManager transactionManager;
     private final TypeRegistry typeRegistry;
@@ -237,6 +238,7 @@ public final class MetadataManager
             MaterializedViewPropertyManager materializedViewPropertyManager,
             ColumnPropertyManager columnPropertyManager,
             AnalyzePropertyManager analyzePropertyManager,
+            TableProceduresPropertyManager tableProceduresPropertyManager,
             SystemSecurityMetadata systemSecurityMetadata,
             TransactionManager transactionManager,
             TypeOperators typeOperators,
@@ -256,6 +258,7 @@ public final class MetadataManager
         this.materializedViewPropertyManager = requireNonNull(materializedViewPropertyManager, "materializedViewPropertyManager is null");
         this.columnPropertyManager = requireNonNull(columnPropertyManager, "columnPropertyManager is null");
         this.analyzePropertyManager = requireNonNull(analyzePropertyManager, "analyzePropertyManager is null");
+        this.tableProceduresPropertyManager = requireNonNull(tableProceduresPropertyManager, "tableProceduresPropertyManager is null");
         this.systemSecurityMetadata = requireNonNull(systemSecurityMetadata, "systemSecurityMetadata is null");
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.typeOperators = requireNonNull(typeOperators, "typeOperators is null");
@@ -330,6 +333,7 @@ public final class MetadataManager
                 new MaterializedViewPropertyManager(),
                 new ColumnPropertyManager(),
                 new AnalyzePropertyManager(),
+                new TableProceduresPropertyManager(),
                 new DisabledSystemSecurityMetadata(),
                 transactionManager,
                 typeOperators,
@@ -2576,6 +2580,12 @@ public final class MetadataManager
     public AnalyzePropertyManager getAnalyzePropertyManager()
     {
         return analyzePropertyManager;
+    }
+
+    @Override
+    public TableProceduresPropertyManager getTableProceduresPropertyManager()
+    {
+        return tableProceduresPropertyManager;
     }
 
     //
