@@ -106,6 +106,7 @@ public class TestTableFinishOperator
                         ImmutableList.of(LONG_MAX.bind(ImmutableList.of(2), Optional.empty())),
                         true),
                 descriptor,
+                Optional.empty(),
                 session);
         DriverContext driverContext = createTaskContext(scheduledExecutor, scheduledExecutor, session)
                 .addPipelineContext(0, true, true, false)
@@ -159,14 +160,16 @@ public class TestTableFinishOperator
         private boolean finished;
         private Collection<Slice> fragments;
         private Collection<ComputedStatistics> computedStatistics;
+        private List<Object> tableExecuteSplitsInfo;
 
         @Override
-        public Optional<ConnectorOutputMetadata> finishTable(Collection<Slice> fragments, Collection<ComputedStatistics> computedStatistics)
+        public Optional<ConnectorOutputMetadata> finishTable(Collection<Slice> fragments, Collection<ComputedStatistics> computedStatistics, List<Object> tableExecuteSplitsInfo)
         {
             checkState(!finished, "already finished");
             finished = true;
             this.fragments = fragments;
             this.computedStatistics = computedStatistics;
+            this.tableExecuteSplitsInfo = ImmutableList.copyOf(tableExecuteSplitsInfo);
             return Optional.empty();
         }
 
@@ -178,6 +181,11 @@ public class TestTableFinishOperator
         public Collection<ComputedStatistics> getComputedStatistics()
         {
             return computedStatistics;
+        }
+
+        public List<Object> getTableExecuteSplitsInfo()
+        {
+            return tableExecuteSplitsInfo;
         }
     }
 }

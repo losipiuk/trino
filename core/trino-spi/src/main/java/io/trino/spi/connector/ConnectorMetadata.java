@@ -122,9 +122,10 @@ public interface ConnectorMetadata
     /**
      * Finish table execute
      *
-     * @param fragments all fragments returned by {@link io.trino.spi.connector.UpdatablePageSource#finish()}
+     * @param fragments all fragments returned by {@link UpdatablePageSource#finish()}
+     * @param tableExecuteState
      */
-    default void finishTableExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle, Collection<Slice> fragments)
+    default void finishTableExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle, Collection<Slice> fragments, List<Object> tableExecuteState)
     {
         throw new TrinoException(NOT_SUPPORTED, "This connector does not table procedures");
     }

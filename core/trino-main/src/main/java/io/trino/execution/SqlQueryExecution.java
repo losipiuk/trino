@@ -132,6 +132,7 @@ public class SqlQueryExecution
     private final StatsCalculator statsCalculator;
     private final CostCalculator costCalculator;
     private final DynamicFilterService dynamicFilterService;
+    private final TableExecuteContextManager tableExecuteContextManager;
 
     private SqlQueryExecution(
             PreparedQuery preparedQuery,
@@ -159,7 +160,8 @@ public class SqlQueryExecution
             StatsCalculator statsCalculator,
             CostCalculator costCalculator,
             DynamicFilterService dynamicFilterService,
-            WarningCollector warningCollector)
+            WarningCollector warningCollector,
+            TableExecuteContextManager tableExecuteContextManager)
     {
         try (SetThreadName ignored = new SetThreadName("Query-%s", stateMachine.getQueryId())) {
             this.slug = requireNonNull(slug, "slug is null");
@@ -180,6 +182,7 @@ public class SqlQueryExecution
             this.statsCalculator = requireNonNull(statsCalculator, "statsCalculator is null");
             this.costCalculator = requireNonNull(costCalculator, "costCalculator is null");
             this.dynamicFilterService = requireNonNull(dynamicFilterService, "dynamicFilterService is null");
+            this.tableExecuteContextManager = requireNonNull(tableExecuteContextManager, "tableExecuteContextManager is null");
 
             checkArgument(scheduleSplitBatchSize > 0, "scheduleSplitBatchSize must be greater than 0");
             this.scheduleSplitBatchSize = scheduleSplitBatchSize;
@@ -544,7 +547,8 @@ public class SqlQueryExecution
                 nodeTaskMap,
                 executionPolicy,
                 schedulerStats,
-                dynamicFilterService);
+                dynamicFilterService,
+                tableExecuteContextManager);
 
         queryScheduler.set(scheduler);
 
@@ -741,6 +745,7 @@ public class SqlQueryExecution
         private final StatsCalculator statsCalculator;
         private final CostCalculator costCalculator;
         private final DynamicFilterService dynamicFilterService;
+        private final TableExecuteContextManager tableExecuteContextManager;
 
         @Inject
         SqlQueryExecutionFactory(
@@ -765,7 +770,8 @@ public class SqlQueryExecution
                 SplitSchedulerStats schedulerStats,
                 StatsCalculator statsCalculator,
                 CostCalculator costCalculator,
-                DynamicFilterService dynamicFilterService)
+                DynamicFilterService dynamicFilterService,
+                TableExecuteContextManager tableExecuteContextManager)
         {
             requireNonNull(config, "config is null");
             this.schedulerStats = requireNonNull(schedulerStats, "schedulerStats is null");
@@ -790,6 +796,7 @@ public class SqlQueryExecution
             this.statsCalculator = requireNonNull(statsCalculator, "statsCalculator is null");
             this.costCalculator = requireNonNull(costCalculator, "costCalculator is null");
             this.dynamicFilterService = requireNonNull(dynamicFilterService, "dynamicFilterService is null");
+            this.tableExecuteContextManager = requireNonNull(tableExecuteContextManager, "tableExecuteContextManager is null");
         }
 
         @Override
@@ -829,7 +836,8 @@ public class SqlQueryExecution
                     statsCalculator,
                     costCalculator,
                     dynamicFilterService,
-                    warningCollector);
+                    warningCollector,
+                    tableExecuteContextManager);
         }
     }
 }
