@@ -543,6 +543,7 @@ public class TestBackgroundHiveSplitLoader
                 false,
                 false,
                 true,
+                Optional.empty(),
                 Optional.empty());
 
         HiveSplitSource hiveSplitSource = hiveSplitSource(backgroundHiveSplitLoader);
@@ -1068,7 +1069,8 @@ public class TestBackgroundHiveSplitLoader
                 false,
                 false,
                 true,
-                validWriteIds);
+                validWriteIds,
+                Optional.empty());
     }
 
     private BackgroundHiveSplitLoader backgroundHiveSplitLoader(List<LocatedFileStatus> files, DirectoryLister directoryLister)
@@ -1100,6 +1102,7 @@ public class TestBackgroundHiveSplitLoader
                 false,
                 false,
                 true,
+                Optional.empty(),
                 Optional.empty());
     }
 
@@ -1126,6 +1129,7 @@ public class TestBackgroundHiveSplitLoader
                 false,
                 false,
                 true,
+                Optional.empty(),
                 Optional.empty());
     }
 
@@ -1169,7 +1173,8 @@ public class TestBackgroundHiveSplitLoader
                 Integer.MAX_VALUE,
                 hiveSplitLoader,
                 executor,
-                new CounterStat());
+                new CounterStat(),
+                false);
     }
 
     private static Table table(
