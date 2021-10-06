@@ -641,7 +641,7 @@ public class TestHiveStorageFormats
         onTrino().executeQuery("DROP TABLE " + tableName);
     }
 
-    @Test(dataProvider = "storageFormatsWithNanosecondPrecision", groups = {STORAGE_FORMATS_DETAILED, HMS_ONLY})
+    @Test(dataProvider = "storageFormatsWithNanosecondPrecision", groups = STORAGE_FORMATS_DETAILED)
     public void testTimestampCreatedFromTrino(StorageFormat storageFormat)
     {
         String tableName = createSimpleTimestampTable("timestamps_from_trino", storageFormat);
@@ -688,7 +688,7 @@ public class TestHiveStorageFormats
         onTrino().executeQuery(format("DROP TABLE %s", tableName));
     }
 
-    @Test(dataProvider = "storageFormatsWithNanosecondPrecision", groups = {STORAGE_FORMATS_DETAILED, HMS_ONLY})
+    @Test(dataProvider = "storageFormatsWithNanosecondPrecision", groups = {STORAGE_FORMATS_DETAILED})
     public void testStructTimestampsFromTrino(StorageFormat format)
     {
         String tableName = createStructTimestampTable("trino_struct_timestamp", format);
