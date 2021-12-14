@@ -20,7 +20,6 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -70,7 +69,7 @@ public abstract class SetOperationNode
         // Make sure each source positionally corresponds to their Symbol values in the Multimap
         for (int i = 0; i < sources.size(); i++) {
             for (Collection<Symbol> expectedInputs : this.outputToInputs.asMap().values()) {
-                checkArgument(sources.get(i).getOutputSymbols().contains(Iterables.get(expectedInputs, i)), "Source does not provide required symbols");
+                checkArgument(sources.get(i).getOutputSymbols().contains(expectedInputs.stream().skip(i).findFirst().get()), "Source does not provide required symbols");
             }
         }
     }
@@ -110,7 +109,7 @@ public abstract class SetOperationNode
     {
         ImmutableMap.Builder<Symbol, SymbolReference> builder = ImmutableMap.builder();
         for (Map.Entry<Symbol, Collection<Symbol>> entry : outputToInputs.asMap().entrySet()) {
-            builder.put(entry.getKey(), Iterables.get(entry.getValue(), sourceIndex).toSymbolReference());
+            builder.put(entry.getKey(), entry.getValue().stream().skip(sourceIndex).findFirst().get().toSymbolReference());
         }
 
         return builder.build();

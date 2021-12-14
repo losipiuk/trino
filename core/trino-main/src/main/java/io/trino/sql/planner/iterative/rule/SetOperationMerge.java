@@ -14,7 +14,6 @@
 package io.trino.sql.planner.iterative.rule;
 
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Iterables;
 import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.iterative.Lookup;
 import io.trino.sql.planner.iterative.Rule.Context;
@@ -181,7 +180,7 @@ class SetOperationMerge
     {
         newSources.addAll(child.getSources());
         for (Map.Entry<Symbol, Collection<Symbol>> mapping : node.getSymbolMapping().asMap().entrySet()) {
-            Symbol input = Iterables.get(mapping.getValue(), childIndex);
+            Symbol input = mapping.getValue().stream().skip(childIndex).findFirst().get();
             newMappingsBuilder.putAll(mapping.getKey(), child.getSymbolMapping().get(input));
         }
     }
@@ -190,7 +189,7 @@ class SetOperationMerge
     {
         newSources.add(child);
         for (Map.Entry<Symbol, Collection<Symbol>> mapping : node.getSymbolMapping().asMap().entrySet()) {
-            newMappingsBuilder.put(mapping.getKey(), Iterables.get(mapping.getValue(), childIndex));
+            newMappingsBuilder.put(mapping.getKey(), mapping.getValue().stream().skip(childIndex).findFirst().get());
         }
     }
 }
