@@ -16,7 +16,6 @@ package io.trino.plugin.example;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
@@ -28,11 +27,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.transform;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -105,7 +105,7 @@ public class ExampleClient
     private static Function<List<ExampleTable>, Map<String, ExampleTable>> resolveAndIndexTables(URI metadataUri)
     {
         return tables -> {
-            Iterable<ExampleTable> resolvedTables = transform(tables, tableUriResolver(metadataUri));
+            Iterator<ExampleTable> resolvedTables = tables.stream().map(tableUriResolver(metadataUri)).iterator();
             return ImmutableMap.copyOf(uniqueIndex(resolvedTables, ExampleTable::getName));
         };
     }
@@ -113,7 +113,7 @@ public class ExampleClient
     private static Function<ExampleTable, ExampleTable> tableUriResolver(URI baseUri)
     {
         return table -> {
-            List<URI> sources = ImmutableList.copyOf(transform(table.getSources(), baseUri::resolve));
+            List<URI> sources = table.getSources().stream().map(baseUri::resolve).collect(toImmutableList());
             return new ExampleTable(table.getName(), table.getColumns(), sources);
         };
     }

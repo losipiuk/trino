@@ -16,7 +16,6 @@ package io.trino.plugin.hive;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import io.airlift.concurrent.BoundedExecutor;
 import io.airlift.stats.CounterStat;
@@ -55,14 +54,15 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.google.common.collect.Iterables.transform;
+import static com.google.common.collect.Iterators.singletonIterator;
+import static com.google.common.collect.Streams.stream;
 import static io.trino.plugin.hive.BackgroundHiveSplitLoader.BucketSplitInfo.createBucketSplitInfo;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_INVALID_METADATA;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_PARTITION_DROPPED_DURING_QUERY;
@@ -85,6 +85,7 @@ import static io.trino.spi.StandardErrorCode.SERVER_SHUTTING_DOWN;
 import static io.trino.spi.connector.ConnectorSplitManager.SplitSchedulingStrategy.GROUPED_SCHEDULING;
 import static java.lang.Math.min;
 import static java.lang.String.format;
+import static java.util.Collections.emptyIterator;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 import static org.apache.hadoop.hive.ql.io.AcidUtils.isTransactionalTable;
@@ -225,7 +226,7 @@ public class HiveSplitManager
         // sort partitions
         partitions = Ordering.natural().onResultOf(HivePartition::getPartitionId).reverse().sortedCopy(partitions);
 
-        Iterable<HivePartitionMetadata> hivePartitions = getPartitionMetadata(session, metastore, table, tableName, partitions, bucketHandle.map(HiveBucketHandle::toTableBucketProperty));
+        Iterator<HivePartitionMetadata> hivePartitions = getPartitionMetadata(session, metastore, table, tableName, partitions, bucketHandle.map(HiveBucketHandle::toTableBucketProperty));
 
         // Only one thread per partition is usable when a table is not transactional
         int concurrency = isTransactionalTable(table.getParameters()) ? splitLoaderConcurrency : min(splitLoaderConcurrency, partitions.size());
@@ -296,28 +297,28 @@ public class HiveSplitManager
         return highMemorySplitSourceCounter;
     }
 
-    private Iterable<HivePartitionMetadata> getPartitionMetadata(ConnectorSession session, SemiTransactionalHiveMetastore metastore, Table table, SchemaTableName tableName, List<HivePartition> hivePartitions, Optional<HiveBucketProperty> bucketProperty)
+    private Iterator<HivePartitionMetadata> getPartitionMetadata(ConnectorSession session, SemiTransactionalHiveMetastore metastore, Table table, SchemaTableName tableName, List<HivePartition> hivePartitions, Optional<HiveBucketProperty> bucketProperty)
     {
         if (hivePartitions.isEmpty()) {
-            return ImmutableList.of();
+            return emptyIterator();
         }
 
         if (hivePartitions.size() == 1) {
             HivePartition firstPartition = getOnlyElement(hivePartitions);
             if (firstPartition.getPartitionId().equals(UNPARTITIONED_ID)) {
-                return ImmutableList.of(new HivePartitionMetadata(firstPartition, Optional.empty(), TableToPartitionMapping.empty()));
+                return singletonIterator(new HivePartitionMetadata(firstPartition, Optional.empty(), TableToPartitionMapping.empty()));
             }
         }
 
         Optional<HiveStorageFormat> storageFormat = getHiveStorageFormat(table.getStorage().getStorageFormat());
 
         Iterable<List<HivePartition>> partitionNameBatches = partitionExponentially(hivePartitions, minPartitionBatchSize, maxPartitionBatchSize);
-        Iterable<List<HivePartitionMetadata>> partitionBatches = transform(partitionNameBatches, partitionBatch -> {
+        Stream<List<HivePartitionMetadata>> partitionBatches = stream(partitionNameBatches).map(partitionBatch -> {
             Map<String, Optional<Partition>> batch = metastore.getPartitionsByNames(
                     new HiveIdentity(session),
                     tableName.getSchemaName(),
                     tableName.getTableName(),
-                    Lists.transform(partitionBatch, HivePartition::getPartitionId));
+                    partitionBatch.stream().map(HivePartition::getPartitionId).collect(toImmutableList()));
             ImmutableMap.Builder<String, Partition> partitionBuilder = ImmutableMap.builder();
             for (Map.Entry<String, Optional<Partition>> entry : batch.entrySet()) {
                 if (entry.getValue().isEmpty()) {
@@ -400,7 +401,7 @@ public class HiveSplitManager
 
             return results.build();
         });
-        return concat(partitionBatches);
+        return partitionBatches.flatMap(List::stream).iterator();
     }
 
     private TableToPartitionMapping getTableToPartitionMapping(ConnectorSession session, Optional<HiveStorageFormat> storageFormat, SchemaTableName tableName, String partName, List<Column> tableColumns, List<Column> partitionColumns)

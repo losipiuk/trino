@@ -70,7 +70,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Iterables.transform;
 import static io.trino.plugin.cassandra.CassandraErrorCode.CASSANDRA_VERSION_ERROR;
 import static io.trino.plugin.cassandra.CassandraMetadata.PRESTO_COMMENT_METADATA;
 import static io.trino.plugin.cassandra.CassandraType.isFullySupported;
@@ -199,7 +198,7 @@ public class CassandraSession
 
             // column ordering
             List<ExtraColumnMetadata> extras = extraColumnMetadataCodec.fromJson(columnOrderingString);
-            List<String> explicitColumnOrder = new ArrayList<>(ImmutableList.copyOf(transform(extras, ExtraColumnMetadata::getName)));
+            List<String> explicitColumnOrder = extras.stream().map(ExtraColumnMetadata::getName).collect(toList());
             hiddenColumns = extras.stream()
                     .filter(ExtraColumnMetadata::isHidden)
                     .map(ExtraColumnMetadata::getName)

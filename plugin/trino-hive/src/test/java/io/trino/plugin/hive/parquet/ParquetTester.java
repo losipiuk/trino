@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import io.airlift.units.DataSize;
@@ -89,12 +90,13 @@ import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Functions.constant;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
-import static com.google.common.collect.Iterables.transform;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.trino.plugin.hive.AbstractTestHiveFileFormats.getFieldFromCursor;
 import static io.trino.plugin.hive.HiveSessionProperties.getParquetMaxReadBlockSize;
@@ -121,6 +123,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory.getStandardStructObjectInspector;
 import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils.getTypeInfosFromTypeString;
 import static org.apache.parquet.column.ParquetProperties.WriterVersion.PARQUET_1_0;
@@ -198,7 +201,7 @@ public class ParquetTester
     public <W, R> void testRoundTrip(PrimitiveObjectInspector columnObjectInspector, Iterable<W> writeValues, Function<W, R> readTransform, Type parameterType)
             throws Exception
     {
-        testRoundTrip(columnObjectInspector, writeValues, transform(writeValues, readTransform::apply), parameterType);
+        testRoundTrip(columnObjectInspector, writeValues, Streams.stream(writeValues).map(readTransform).collect(toImmutableList()), parameterType);
     }
 
     public void testSingleLevelArraySchemaRoundTrip(ObjectInspector objectInspector, Iterable<?> writeValues, Iterable<?> readValues, Type type)
@@ -221,8 +224,9 @@ public class ParquetTester
                 new Iterable<?>[] {readValues}, TEST_COLUMN, singletonList(type), Optional.empty(), false);
 
         // all nulls
-        assertRoundTrip(singletonList(objectInspector), new Iterable<?>[] {transform(writeValues, constant(null))},
-                new Iterable<?>[] {transform(writeValues, constant(null))}, TEST_COLUMN, singletonList(type), Optional.empty());
+        assertRoundTrip(singletonList(objectInspector), new Iterable<?>[] {
+                        Streams.stream(writeValues).map(constant(null)).collect(toList())},
+                new Iterable<?>[] {Streams.stream(writeValues).map(constant(null)).collect(toList())}, TEST_COLUMN, singletonList(type), Optional.empty());
         if (objectInspector.getTypeName().contains("map<")) {
             List<TypeInfo> typeInfos = getTypeInfosFromTypeString(objectInspector.getTypeName());
             MessageType schema = MapKeyValuesSchemaConverter.convert(TEST_COLUMN, typeInfos);
@@ -231,8 +235,8 @@ public class ParquetTester
                     readValues}, TEST_COLUMN, singletonList(type), Optional.of(schema), false);
 
             // all nulls
-            assertRoundTrip(singletonList(objectInspector), new Iterable<?>[] {transform(writeValues, constant(null))},
-                    new Iterable<?>[] {transform(writeValues, constant(null))}, TEST_COLUMN, singletonList(type), Optional.of(schema));
+            assertRoundTrip(singletonList(objectInspector), new Iterable<?>[] {Streams.stream(writeValues).map(constant(null)).collect(toList())},
+                    new Iterable<?>[] {Streams.stream(writeValues).map(constant(null)).collect(toList())}, TEST_COLUMN, singletonList(type), Optional.of(schema));
         }
     }
 
@@ -619,7 +623,7 @@ public class ParquetTester
     {
         Properties orderTableProperties = new Properties();
         orderTableProperties.setProperty("columns", Joiner.on(',').join(columnNames));
-        orderTableProperties.setProperty("columns.types", Joiner.on(',').join(transform(objectInspectors, ObjectInspector::getTypeName)));
+        orderTableProperties.setProperty("columns.types", objectInspectors.stream().map(ObjectInspector::getTypeName).collect(Collectors.joining(",")));
         return orderTableProperties;
     }
 
@@ -663,7 +667,7 @@ public class ParquetTester
     private Iterable<?>[] transformToNulls(Iterable<?>[] values)
     {
         return stream(values)
-                .map(v -> transform(v, constant(null)))
+                .map(v -> Streams.stream(v).map(constant(null)).collect(toList()))
                 .toArray(Iterable<?>[]::new);
     }
 
