@@ -231,8 +231,8 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.Streams.findLast;
 import static io.trino.SystemSessionProperties.getMaxGroupingSets;
 import static io.trino.metadata.FunctionKind.AGGREGATE;
 import static io.trino.metadata.FunctionKind.WINDOW;
@@ -3114,7 +3114,7 @@ class StatementAnalyzer
 
                     if (field.isEmpty()) {
                         if (name != null) {
-                            field = Optional.of(getLast(name.getOriginalParts()));
+                            field = findLast(name.getOriginalParts().stream());
                         }
                     }
 

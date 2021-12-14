@@ -101,10 +101,9 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Iterables.getFirst;
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Sets.newConcurrentHashSet;
+import static com.google.common.collect.Streams.findLast;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.MoreFutures.tryGetFutureValue;
 import static io.airlift.concurrent.MoreFutures.whenAnyComplete;
@@ -889,7 +888,7 @@ public class SqlQueryScheduler
                 });
             }
 
-            Optional<PipelinedStageExecution> root = Optional.ofNullable(getFirst(stageExecutions, null));
+            Optional<PipelinedStageExecution> root = stageExecutions.stream().findFirst();
             root.ifPresent(stageExecution -> stageExecution.addStateChangeListener(state -> {
                 if (state == FINISHED) {
                     queryStateMachine.transitionToFinishing();
@@ -900,7 +899,7 @@ public class SqlQueryScheduler
                 }
             }));
 
-            Optional<PipelinedStageExecution> last = Optional.ofNullable(getLast(stageExecutions, null));
+            Optional<PipelinedStageExecution> last = findLast(stageExecutions.stream());
             last.ifPresent(stageExecution -> stageExecution.addStateChangeListener(newState -> {
                 if (newState == FLUSHING || newState.isDone()) {
                     DistributedStagesScheduler distributedStagesScheduler = this.distributedStagesScheduler.get();

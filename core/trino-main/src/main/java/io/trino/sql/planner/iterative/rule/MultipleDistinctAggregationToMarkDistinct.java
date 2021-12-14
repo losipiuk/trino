@@ -16,7 +16,6 @@ package io.trino.sql.planner.iterative.rule;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import io.trino.SystemSessionProperties;
 import io.trino.matching.Captures;
 import io.trino.matching.Pattern;
@@ -33,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.google.common.collect.Streams.findLast;
 import static io.trino.spi.type.BooleanType.BOOLEAN;
 import static io.trino.sql.planner.plan.Patterns.aggregation;
 import static java.util.stream.Collectors.toSet;
@@ -127,7 +127,7 @@ public class MultipleDistinctAggregationToMarkDistinct
 
                 Symbol marker = markers.get(inputs);
                 if (marker == null) {
-                    marker = context.getSymbolAllocator().newSymbol(Iterables.getLast(inputs).getName(), BOOLEAN, "distinct");
+                    marker = context.getSymbolAllocator().newSymbol(findLast(inputs.stream()).get().getName(), BOOLEAN, "distinct");
                     markers.put(inputs, marker);
 
                     ImmutableSet.Builder<Symbol> distinctSymbols = ImmutableSet.<Symbol>builder()

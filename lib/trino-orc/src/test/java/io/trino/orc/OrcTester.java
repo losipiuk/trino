@@ -17,7 +17,6 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
@@ -109,6 +108,7 @@ import java.util.stream.IntStream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterators.advance;
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Streams.findLast;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
 import static io.airlift.units.DataSize.succinctBytes;
@@ -336,7 +336,7 @@ public class OrcTester
         Type mapType = mapType(type, type);
 
         // maps cannot have a null key, so select a value to use for the map key when the value is null
-        Object readNullKeyValue = Iterables.getLast(readValues);
+        Object readNullKeyValue = findLast(readValues.stream()).get();
 
         // values in simple map
         testRoundTripType(

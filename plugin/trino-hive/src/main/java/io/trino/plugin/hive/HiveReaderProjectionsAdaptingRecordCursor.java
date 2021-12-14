@@ -13,7 +13,6 @@
  */
 package io.trino.plugin.hive;
 
-import com.google.common.collect.Iterables;
 import io.airlift.slice.Slice;
 import io.trino.plugin.hive.ReaderProjectionsAdapter.ChannelMapping;
 import io.trino.plugin.hive.util.ForwardingRecordCursor;
@@ -24,6 +23,7 @@ import io.trino.spi.type.Type;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Streams.findLast;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -102,7 +102,7 @@ public class HiveReaderProjectionsAdaptingRecordCursor
         // Apply dereferences except for the last one, which is type dependent
         Block baseObject = applyDereferences(elementBlock, dereferences, dereferences.size() - 1);
 
-        return baseTypes[field].getBoolean(baseObject, Iterables.getLast(dereferences));
+        return baseTypes[field].getBoolean(baseObject, findLast(dereferences.stream()).get());
     }
 
     @Override
@@ -121,7 +121,7 @@ public class HiveReaderProjectionsAdaptingRecordCursor
         // Apply dereferences except for the last one, which is type dependent
         Block baseObject = applyDereferences(elementBlock, dereferences, dereferences.size() - 1);
 
-        return baseTypes[field].getLong(baseObject, Iterables.getLast(dereferences));
+        return baseTypes[field].getLong(baseObject, findLast(dereferences.stream()).get());
     }
 
     @Override
@@ -140,7 +140,7 @@ public class HiveReaderProjectionsAdaptingRecordCursor
         // Apply dereferences except for the last one, which is type dependent
         Block baseObject = applyDereferences(elementBlock, dereferences, dereferences.size() - 1);
 
-        return baseTypes[field].getDouble(baseObject, Iterables.getLast(dereferences));
+        return baseTypes[field].getDouble(baseObject, findLast(dereferences.stream()).get());
     }
 
     @Override
@@ -159,7 +159,7 @@ public class HiveReaderProjectionsAdaptingRecordCursor
         // Apply dereferences except for the last one, which is type dependent
         Block baseObject = applyDereferences(elementBlock, dereferences, dereferences.size() - 1);
 
-        return baseTypes[field].getSlice(baseObject, Iterables.getLast(dereferences));
+        return baseTypes[field].getSlice(baseObject, findLast(dereferences.stream()).get());
     }
 
     @Override
@@ -178,7 +178,7 @@ public class HiveReaderProjectionsAdaptingRecordCursor
         // Apply dereferences except for the last one, which is type dependent
         Block baseObject = applyDereferences(elementBlock, dereferences, dereferences.size() - 1);
 
-        return baseTypes[field].getObject(baseObject, Iterables.getLast(dereferences));
+        return baseTypes[field].getObject(baseObject, findLast(dereferences.stream()).get());
     }
 
     @Override
@@ -206,7 +206,7 @@ public class HiveReaderProjectionsAdaptingRecordCursor
             baseObject = baseObject.getObject(dereferenceIndex, Block.class);
         }
 
-        int finalDereference = Iterables.getLast(dereferences);
+        int finalDereference = findLast(dereferences.stream()).get();
         return baseObject.isNull(finalDereference);
     }
 }

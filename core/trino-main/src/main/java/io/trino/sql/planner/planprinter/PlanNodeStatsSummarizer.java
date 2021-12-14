@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Lists.reverse;
+import static com.google.common.collect.Streams.findLast;
 import static io.airlift.units.DataSize.succinctBytes;
 import static io.trino.util.MoreMaps.mergeMaps;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -91,7 +91,7 @@ public final class PlanNodeStatsSummarizer
 
             Set<PlanNodeId> processedNodes = new HashSet<>();
             PlanNodeId inputPlanNode = pipelineStats.getOperatorSummaries().iterator().next().getPlanNodeId();
-            PlanNodeId outputPlanNode = getLast(pipelineStats.getOperatorSummaries()).getPlanNodeId();
+            PlanNodeId outputPlanNode = findLast(pipelineStats.getOperatorSummaries().stream()).get().getPlanNodeId();
 
             // Gather input statistics
             for (OperatorStats operatorStats : pipelineStats.getOperatorSummaries()) {

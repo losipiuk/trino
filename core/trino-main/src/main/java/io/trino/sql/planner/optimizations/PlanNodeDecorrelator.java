@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import io.trino.spi.connector.SortOrder;
@@ -60,6 +59,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.Streams.findLast;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.sql.analyzer.TypeSignatureTranslator.toTypeSignature;
 import static io.trino.sql.planner.DeterminismEvaluator.isDeterministic;
@@ -616,7 +616,7 @@ public class PlanNodeDecorrelator
         SymbolMapper getCorrelatedSymbolMapper()
         {
             return symbolMapper(correlatedSymbolsMapping.asMap().entrySet().stream()
-                    .collect(toImmutableMap(Map.Entry::getKey, symbols -> Iterables.getLast(symbols.getValue()))));
+                    .collect(toImmutableMap(Map.Entry::getKey, symbols -> findLast(symbols.getValue().stream()).get())));
         }
 
         /**

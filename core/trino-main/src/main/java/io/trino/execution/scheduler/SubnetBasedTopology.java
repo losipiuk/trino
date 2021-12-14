@@ -14,7 +14,6 @@
 package io.trino.execution.scheduler;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.net.InetAddresses;
 import io.trino.spi.HostAddress;
@@ -29,6 +28,7 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.findLast;
 import static io.trino.execution.scheduler.NetworkLocation.ROOT_LOCATION;
 import static java.util.Objects.requireNonNull;
 
@@ -100,7 +100,7 @@ public class SubnetBasedTopology
         }
 
         if (!lengths.isEmpty()) {
-            if (lengths.get(0) <= 0 || Iterables.getLast(lengths) >= protocol.getTotalBitCount()) {
+            if (lengths.get(0) <= 0 || findLast(lengths.stream()).get() >= protocol.getTotalBitCount()) {
                 throw new IllegalArgumentException("Subnet mask prefix lengths are invalid");
             }
         }

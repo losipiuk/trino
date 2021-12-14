@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.type.Type;
 
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.google.common.collect.Streams.findLast;
 import static java.util.Objects.requireNonNull;
 
 public class IcebergColumnHandle
@@ -52,7 +52,7 @@ public class IcebergColumnHandle
         this.path = ImmutableList.copyOf(requireNonNull(path, "path is null"));
         this.type = requireNonNull(type, "type is null");
         this.comment = requireNonNull(comment, "comment is null");
-        this.id = path.isEmpty() ? baseColumnIdentity.getId() : Iterables.getLast(path);
+        this.id = findLast(path.stream()).orElse(baseColumnIdentity.getId());
     }
 
     @JsonIgnore

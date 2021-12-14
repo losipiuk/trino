@@ -27,8 +27,8 @@ import io.trino.sql.planner.plan.UnionNode;
 
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Sets.intersection;
+import static com.google.common.collect.Streams.findLast;
 import static io.trino.matching.Capture.newCapture;
 import static io.trino.sql.planner.plan.Patterns.TopN.step;
 import static io.trino.sql.planner.plan.Patterns.source;
@@ -64,7 +64,7 @@ public class PushTopNThroughUnion
 
             for (Symbol unionOutput : unionNode.getOutputSymbols()) {
                 Set<Symbol> inputSymbols = ImmutableSet.copyOf(unionNode.getSymbolMapping().get(unionOutput));
-                Symbol unionInput = getLast(intersection(inputSymbols, sourceOutputSymbols));
+                Symbol unionInput = findLast(intersection(inputSymbols, sourceOutputSymbols).stream()).get();
                 symbolMapper.put(unionOutput, unionInput);
             }
             sources.add(symbolMapper.build().map(topNNode, source, context.getIdAllocator().getNextId()));
