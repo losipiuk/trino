@@ -103,9 +103,33 @@ public final class MemoryQueryRunner
     public static void main(String[] args)
             throws Exception
     {
-        DistributedQueryRunner queryRunner = createMemoryQueryRunner(
-                ImmutableMap.of("http-server.http.port", "8080"),
-                TpchTable.getTables());
+        ImmutableMap<String, String> exchangeManagerProperties = ImmutableMap.<String, String>builder()
+                .put("exchange.base-directory", "/tmp/trino-local-file-system-exchange-manager")
+                .buildOrThrow();
+
+        DistributedQueryRunner queryRunner = MemoryQueryRunner.builder()
+                .setExtraProperties(ImmutableMap.<String, String>builder()
+                        .put("http-server.http.port", "8080")
+                        .put("memory.heap-headroom-per-node", "19800MB")
+                        .put("query.low-memory-killer.delay", "0s")
+                        .put("query.max-memory-per-node", "100MB")
+                        .put("retry-policy", "TASK")
+                        .put("query.hash-partition-count", "5")
+                        .put("fault-tolerant-execution-target-task-input-size", "10MB")
+                        .put("fault-tolerant-execution-target-task-split-count", "4")
+                        // to trigger spilling
+                        .put("exchange.deduplication-buffer-size", "1kB")
+                        // TODO: re-enable once failure recover supported for this functionality
+                        .put("enable-dynamic-filtering", "false")
+                        .put("distributed-sort", "false")
+                        .put("fault-tolerant-execution-task-memory", "1GB")
+                        .buildOrThrow())
+                .setAdditionalSetup(runner -> {
+                    runner.installPlugin(new io.trino.plugin.exchange.FileSystemExchangePlugin());
+                    runner.loadExchangeManager("filesystem", exchangeManagerProperties);
+                })
+                .setInitialTables(TpchTable.getTables())
+                .build();
         Thread.sleep(10);
         Logger log = Logger.get(MemoryQueryRunner.class);
         log.info("======== SERVER STARTED ========");

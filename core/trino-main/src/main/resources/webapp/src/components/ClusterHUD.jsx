@@ -151,7 +151,7 @@ export class ClusterHUD extends React.Component {
                     <div className="col-xs-4">
                         <div className="stat-title">
                             <span className="text" data-toggle="tooltip" data-placement="right" title="Total number of queries currently running">
-                                Running queries
+                                Running queriesz
                             </span>
                         </div>
                     </div>
