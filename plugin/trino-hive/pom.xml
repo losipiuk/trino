@@ -15,6 +15,9 @@
 
     <properties>
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
+        <!-- decrease memory usage for tests -->
+        <air.test.parallel>classes</air.test.parallel>
+        <air.test.thread-count>1</air.test.thread-count>
     </properties>
 
     <dependencies>

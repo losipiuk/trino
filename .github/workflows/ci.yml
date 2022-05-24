@@ -40,8 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         java-version:
-          - 11
-          - 17
+          - 18
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -82,7 +81,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
           cache: 'maven'
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
@@ -121,7 +120,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
           cache: 'maven'
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
@@ -181,7 +180,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
           cache: 'maven'
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
@@ -297,7 +296,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
           cache: 'maven'
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
@@ -369,7 +368,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
       - name: Maven validate
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -434,7 +433,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
           cache: 'maven'
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
@@ -536,7 +535,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
           cache: 'maven'
       - name: Check secrets
         run: |
@@ -597,7 +596,7 @@ jobs:
           # suite-4 does not exist
           - suite-5
         jdk:
-          - 11
+          - 17
         exclude:
           - config: cdh5
             ignore exclusion if: >-
@@ -628,35 +627,35 @@ jobs:
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-6-non-generic
-            jdk: 11
+            jdk: 17
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-7-non-generic
-            jdk: 11
+            jdk: 17
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-8-non-generic
-            jdk: 11
+            jdk: 17
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-tpcds
-            jdk: 11
+            jdk: 17
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-oauth2
-            jdk: 11
+            jdk: 17
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-ldap
-            jdk: 11
+            jdk: 17
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-compatibility
-            jdk: 11
+            jdk: 17
           # this suite is designed specifically for apache-hive3. TODO remove the suite once we can run all regular tests on apache-hive3.
           - config: apache-hive3
             suite: suite-hms-only
-            jdk: 11
+            jdk: 17
           # suite-1 does not contain Kerberos/encrypted Hive environments
           - config: hdp3
             suite: suite-1
@@ -668,7 +667,7 @@ jobs:
           # this suite is not meant to be run with different configs
           - config: default
             suite: suite-all
-            jdk: 11
+            jdk: 17
     # PT Launcher's timeout defaults to 2h, add some margin
     timeout-minutes: 130
     needs: build-pt
@@ -679,7 +678,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -756,7 +755,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: 18
       - name: Product tests artifact
         uses: actions/download-artifact@v2
         with:
