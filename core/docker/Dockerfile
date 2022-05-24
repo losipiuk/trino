@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM azul/zulu-openjdk:18
+FROM azul/zulu-openjdk-centos:17
 
-ENV JAVA_HOME /usr/lib/jvm/zulu18
+ENV JAVA_HOME /usr/lib/jvm/zulu17
 RUN \
     set -xeu && \
-    apt-get update -q && \
-    apt-get install -y -q less python curl && \
-    rm -rf /var/lib/apt/lists/* && \
+    yum -y -q install less && \
+    yum -q clean all && \
+    rm -rf /var/cache/yum && \
     groupadd trino --gid 1000 && \
     useradd trino --uid 1000 --gid 1000 && \
     mkdir -p /usr/lib/trino /data/trino && \
