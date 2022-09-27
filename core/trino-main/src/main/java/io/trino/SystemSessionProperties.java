@@ -173,6 +173,7 @@ public final class SystemSessionProperties
     public static final String JOIN_PARTITIONED_BUILD_MIN_ROW_COUNT = "join_partitioned_build_min_row_count";
     public static final String USE_EXACT_PARTITIONING = "use_exact_partitioning";
     public static final String FORCE_SPILLING_JOIN = "force_spilling_join";
+    public static final String FAULT_TOLERANT_EXECUTION_EVENT_DRIVEN_SCHEDULER_ENABLED = "fault_tolerant_execution_event_driven_scheduler_enabled";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -853,7 +854,12 @@ public final class SystemSessionProperties
                         FORCE_SPILLING_JOIN,
                         "Force the usage of spliing join operator in favor of the non-spilling one, even if spill is not enabled",
                         featuresConfig.isForceSpillingJoin(),
-                        false));
+                        false),
+                booleanProperty(
+                        FAULT_TOLERANT_EXECUTION_EVENT_DRIVEN_SCHEDULER_ENABLED,
+                        "Enable event driven scheduler for fault tolerant execution",
+                        queryManagerConfig.isFaultTolerantExecutionEventDriverSchedulerEnabled(),
+                        true));
     }
 
     @Override
@@ -1525,5 +1531,10 @@ public final class SystemSessionProperties
     public static boolean isForceSpillingOperator(Session session)
     {
         return session.getSystemProperty(FORCE_SPILLING_JOIN, Boolean.class);
+    }
+
+    public static boolean isFaultTolerantExecutionEventDriverSchedulerEnabled(Session session)
+    {
+        return session.getSystemProperty(FAULT_TOLERANT_EXECUTION_EVENT_DRIVEN_SCHEDULER_ENABLED, Boolean.class);
     }
 }
