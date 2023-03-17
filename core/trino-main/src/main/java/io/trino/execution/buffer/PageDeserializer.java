@@ -331,6 +331,9 @@ public class PageDeserializer
 
             int decompressedSize;
             if (compressed) {
+                if (bytesPreserved != 0) {
+                    throw new RuntimeException("XXXXXXXXXXX!");
+                }
                 decompressedSize = decompressor.decompress(
                         source.getSlice().byteArray(),
                         source.getSlice().byteArrayOffset() + source.getPosition(),

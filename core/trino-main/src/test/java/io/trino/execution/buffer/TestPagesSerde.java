@@ -16,15 +16,21 @@ package io.trino.execution.buffer;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.DynamicSliceOutput;
 import io.airlift.slice.Slice;
+import io.airlift.slice.SliceInput;
+import io.airlift.slice.SliceOutput;
 import io.trino.metadata.BlockEncodingManager;
 import io.trino.metadata.InternalBlockEncodingSerde;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
+import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.block.BlockEncodingSerde;
+import io.trino.spi.block.VariableWidthBlock;
+import io.trino.spi.block.VariableWidthBlockBuilder;
 import io.trino.spi.type.Type;
 import io.trino.tpch.LineItem;
 import io.trino.tpch.LineItemGenerator;
+import org.assertj.core.api.Assertions;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -235,5 +241,126 @@ public class TestPagesSerde
         assertFalse(pageIterator.hasNext());
 
         return slice.length();
+    }
+
+    @Test
+    public void testXXXXX()
+    {
+        List<Type> types = ImmutableList.of(BIGINT);
+        int pageCount = 3;
+        for (int rowCount = 1; rowCount < 5000; rowCount++) {
+            LineItemGenerator lineItemGenerator = new LineItemGenerator(1, 1, 1);
+            Iterator<LineItem> iterator = lineItemGenerator.iterator();
+            int finalRowCount = rowCount;
+            List<Page> pages = IntStream.range(0, pageCount)
+                    .mapToObj(i -> generatePage(types, finalRowCount, iterator))
+                    .collect(toImmutableList());
+
+            for (int blockSize = 10; blockSize < 1000; blockSize++) {
+                testRoundTrip(types, pages, blockSize);
+            }
+        }
+    }
+
+    @Test
+    public void testYYYYY()
+    {
+        for (int blockSize = 500; blockSize < 1000; blockSize += 3) {
+            for (int numberOfEntries = 100; numberOfEntries < 1000; numberOfEntries += 99) {
+                testYYYY(blockSize, numberOfEntries);
+            }
+        }
+    }
+
+    private void testYYYY(int blockSize, int numberOfEntries)
+    {
+        testYYYY(false, false, blockSize, numberOfEntries);
+        testYYYY(true, false, blockSize, numberOfEntries);
+        testYYYY(false, true, blockSize, numberOfEntries);
+        testYYYY(true, true, blockSize, numberOfEntries);
+    }
+
+    private void testYYYY(boolean compressionEnabled, boolean encryptionEnabled, int blockSize, int numberOfEntries)
+    {
+        BlockEncodingSerde testingBlockSerde = new TestBlockEncodingSerde();
+        Optional<SecretKey> encryptionKey = encryptionEnabled ? Optional.of(createRandomAesEncryptionKey()) : Optional.empty();
+        PageSerializer serializer = new PageSerializer(testingBlockSerde, compressionEnabled, encryptionKey, blockSize);
+        PageDeserializer deserializer = new PageDeserializer(testingBlockSerde, compressionEnabled, encryptionKey, blockSize);
+
+        Page page = createTestPage(numberOfEntries);
+        Slice serialized = serializer.serialize(page);
+        Page deserialized = deserializer.deserialize(serialized);
+        assertEquals(deserialized.getChannelCount(), 1);
+
+        VariableWidthBlock expected = (VariableWidthBlock) page.getBlock(0);
+        VariableWidthBlock actual = (VariableWidthBlock) deserialized.getBlock(0);
+
+        Assertions.assertThat(actual.getRawSlice().getBytes()).isEqualTo(expected.getRawSlice().getBytes());
+    }
+
+    private static Page createTestPage(int numberOfEntries)
+    {
+        VariableWidthBlockBuilder blockBuilder = new VariableWidthBlockBuilder(null, 1, 1000);
+        blockBuilder.writeInt(numberOfEntries);
+        for (int i = 0; i < numberOfEntries; i++) {
+            blockBuilder.writeByte(i);
+            blockBuilder.writeShort(i);
+            blockBuilder.writeInt(i);
+            blockBuilder.writeLong(i);
+        }
+        blockBuilder.closeEntry();
+        return new Page(blockBuilder.build());
+    }
+
+
+    private static class TestBlockEncodingSerde
+            implements BlockEncodingSerde
+    {
+        @Override
+        public Block readBlock(SliceInput input)
+        {
+            int numberOfEntries = input.readInt();
+            VariableWidthBlockBuilder blockBuilder = new VariableWidthBlockBuilder(null, 1, 1000);
+            blockBuilder.writeInt(numberOfEntries);
+            for (int i = 0; i < numberOfEntries; ++i) {
+                blockBuilder.writeByte(input.readByte());
+                blockBuilder.writeShort(input.readShort());
+                blockBuilder.writeInt(input.readInt());
+                blockBuilder.writeLong(input.readLong());
+            }
+            blockBuilder.closeEntry();
+            return blockBuilder.build();
+        }
+
+        @Override
+        public void writeBlock(SliceOutput output, Block block)
+        {
+            int offset = 0;
+            int numberOfEntries = block.getInt(0, offset);
+            output.writeInt(numberOfEntries);
+            offset += 4;
+            for(int i = 0; i < numberOfEntries; ++i) {
+                output.writeByte(block.getByte(0, offset));
+                offset += 1;
+                output.writeShort(block.getShort(0, offset));
+                offset += 2;
+                output.writeInt(block.getInt(0, offset));
+                offset += 4;
+                output.writeLong(block.getLong(0, offset));
+                offset += 8;
+            }
+        }
+
+        @Override
+        public Type readType(SliceInput sliceInput)
+        {
+            throw new RuntimeException("not implemented");
+        }
+
+        @Override
+        public void writeType(SliceOutput sliceOutput, Type type)
+        {
+            throw new RuntimeException("not implemented");
+        }
     }
 }
