@@ -60,6 +60,7 @@ public class PartitionedOutputOperator
         private final Optional<Slice> exchangeEncryptionKey;
         private final AggregatedMemoryContext memoryContext;
         private final int pagePartitionerPoolSize;
+        private final int columnarStrategyCoefficient;
 
         public PartitionedOutputFactory(
                 PartitionFunction partitionFunction,
@@ -72,7 +73,8 @@ public class PartitionedOutputOperator
                 PositionsAppenderFactory positionsAppenderFactory,
                 Optional<Slice> exchangeEncryptionKey,
                 AggregatedMemoryContext memoryContext,
-                int pagePartitionerPoolSize)
+                int pagePartitionerPoolSize,
+                int columnarStrategyCoefficient)
         {
             this.partitionFunction = requireNonNull(partitionFunction, "partitionFunction is null");
             this.partitionChannels = requireNonNull(partitionChannels, "partitionChannels is null");
@@ -85,6 +87,7 @@ public class PartitionedOutputOperator
             this.exchangeEncryptionKey = requireNonNull(exchangeEncryptionKey, "exchangeEncryptionKey is null");
             this.memoryContext = requireNonNull(memoryContext, "memoryContext is null");
             this.pagePartitionerPoolSize = pagePartitionerPoolSize;
+            this.columnarStrategyCoefficient = columnarStrategyCoefficient;
         }
 
         @Override
@@ -111,7 +114,8 @@ public class PartitionedOutputOperator
                     positionsAppenderFactory,
                     exchangeEncryptionKey,
                     memoryContext,
-                    pagePartitionerPoolSize);
+                    pagePartitionerPoolSize,
+                    columnarStrategyCoefficient);
         }
     }
 
@@ -135,6 +139,7 @@ public class PartitionedOutputOperator
         private final AggregatedMemoryContext memoryContext;
         private final int pagePartitionerPoolSize;
         private final PagePartitionerPool pagePartitionerPool;
+        private final int columnarStrategyCoefficient;
 
         public PartitionedOutputOperatorFactory(
                 int operatorId,
@@ -152,7 +157,8 @@ public class PartitionedOutputOperator
                 PositionsAppenderFactory positionsAppenderFactory,
                 Optional<Slice> exchangeEncryptionKey,
                 AggregatedMemoryContext memoryContext,
-                int pagePartitionerPoolSize)
+                int pagePartitionerPoolSize,
+                int columnarStrategyCoefficient)
         {
             this.operatorId = operatorId;
             this.planNodeId = requireNonNull(planNodeId, "planNodeId is null");
@@ -170,6 +176,7 @@ public class PartitionedOutputOperator
             this.exchangeEncryptionKey = requireNonNull(exchangeEncryptionKey, "exchangeEncryptionKey is null");
             this.memoryContext = requireNonNull(memoryContext, "memoryContext is null");
             this.pagePartitionerPoolSize = pagePartitionerPoolSize;
+            this.columnarStrategyCoefficient = columnarStrategyCoefficient;
             this.pagePartitionerPool = new PagePartitionerPool(
                     pagePartitionerPoolSize,
                     () -> new PagePartitioner(
@@ -184,7 +191,8 @@ public class PartitionedOutputOperator
                             maxMemory,
                             positionsAppenderFactory,
                             exchangeEncryptionKey,
-                            memoryContext));
+                            memoryContext,
+                            columnarStrategyCoefficient));
         }
 
         @Override
@@ -223,7 +231,8 @@ public class PartitionedOutputOperator
                     positionsAppenderFactory,
                     exchangeEncryptionKey,
                     memoryContext,
-                    pagePartitionerPoolSize);
+                    pagePartitionerPoolSize,
+                    columnarStrategyCoefficient);
         }
     }
 

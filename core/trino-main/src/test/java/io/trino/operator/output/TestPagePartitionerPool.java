@@ -176,6 +176,7 @@ public class TestPagePartitionerPool
                 new PositionsAppenderFactory(new BlockTypeOperators()),
                 Optional.empty(),
                 memoryContext,
+                2,
                 2);
     }
 

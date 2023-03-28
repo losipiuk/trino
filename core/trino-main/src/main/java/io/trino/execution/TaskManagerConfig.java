@@ -65,6 +65,7 @@ public class TaskManagerConfig
     private DataSize sinkMaxBroadcastBufferSize = DataSize.of(200, Unit.MEGABYTE);
     private DataSize maxPagePartitioningBufferSize = DataSize.of(32, Unit.MEGABYTE);
     private int pagePartitioningBufferPoolSize = 8;
+    private int pagePartitioningColumnarStrategyCoefficient = 2;
 
     private Duration clientTimeout = new Duration(2, TimeUnit.MINUTES);
     private Duration infoMaxAge = new Duration(15, TimeUnit.MINUTES);
@@ -406,6 +407,19 @@ public class TaskManagerConfig
     public TaskManagerConfig setPagePartitioningBufferPoolSize(int pagePartitioningBufferPoolSize)
     {
         this.pagePartitioningBufferPoolSize = pagePartitioningBufferPoolSize;
+        return this;
+    }
+
+    public int getPagePartitioningColumnarStrategyCoefficient()
+    {
+        return pagePartitioningColumnarStrategyCoefficient;
+    }
+
+    @Config("driver.page-partitioning-columnar-strategy-coefficient")
+    @ConfigDescription("TODO!!!!")
+    public TaskManagerConfig setPagePartitioningColumnarStrategyCoefficient(int pagePartitioningColumnarStrategyCoefficient)
+    {
+        this.pagePartitioningColumnarStrategyCoefficient = pagePartitioningColumnarStrategyCoefficient;
         return this;
     }
 
