@@ -74,6 +74,7 @@ public class EventDrivenTaskSourceFactory
     private final InternalNodeManager nodeManager;
     private final TableExecuteContextManager tableExecuteContextManager;
     private final int splitBatchSize;
+    private final int staticHashDistributionSplitAssignerPartitionsCount;
 
     @Inject
     public EventDrivenTaskSourceFactory(
@@ -88,7 +89,8 @@ public class EventDrivenTaskSourceFactory
                 executor,
                 nodeManager,
                 tableExecuteContextManager,
-                requireNonNull(queryManagerConfig, "queryManagerConfig is null").getScheduleSplitBatchSize());
+                requireNonNull(queryManagerConfig, "queryManagerConfig is null").getScheduleSplitBatchSize(),
+                queryManagerConfig.getStaticHashDistributionSplitAssignerPartitionsCount());
     }
 
     public EventDrivenTaskSourceFactory(
@@ -96,13 +98,15 @@ public class EventDrivenTaskSourceFactory
             Executor executor,
             InternalNodeManager nodeManager,
             TableExecuteContextManager tableExecuteContextManager,
-            int splitBatchSize)
+            int splitBatchSize,
+            int staticHashDistributionSplitAssignerPartitionsCount)
     {
         this.splitSourceFactory = requireNonNull(splitSourceFactory, "splitSourceFactory is null");
         this.executor = requireNonNull(executor, "executor is null");
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.tableExecuteContextManager = requireNonNull(tableExecuteContextManager, "tableExecuteContextManager is null");
         this.splitBatchSize = splitBatchSize;
+        this.staticHashDistributionSplitAssignerPartitionsCount = staticHashDistributionSplitAssignerPartitionsCount;
     }
 
     public EventDrivenTaskSource create(
@@ -221,6 +225,15 @@ public class EventDrivenTaskSourceFactory
                     arbitraryDistributionWriteTaskTargetSizeInBytesMax,
                     standardSplitSizeInBytes,
                     maxArbitraryDistributionTaskSplitCount);
+        }
+        if (!sourcePartitioningScheme.isExplicitPartitionToNodeMappingPresent() && (partitioning.equals(FIXED_HASH_DISTRIBUTION) || partitioning.getCatalogHandle().isPresent() ||
+                (partitioning.getConnectorHandle() instanceof MergePartitioningHandle))) {
+            return StaticHashDistributionSplitAssigner.create(
+                    staticHashDistributionSplitAssignerPartitionsCount,
+                    partitionedSources,
+                    replicatedSources,
+                    sourcePartitioningScheme,
+                    fragment);
         }
         if (partitioning.equals(FIXED_HASH_DISTRIBUTION) || partitioning.getCatalogHandle().isPresent() ||
                 (partitioning.getConnectorHandle() instanceof MergePartitioningHandle)) {

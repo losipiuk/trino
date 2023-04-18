@@ -128,6 +128,8 @@ public class QueryManagerConfig
     private int faultTolerantExecutionMinPartitionCountForWrite = 50;
     private boolean faultTolerantExecutionForcePreferredWritePartitioningEnabled = true;
 
+    private int staticHashDistributionSplitAssignerPartitionsCount = 50;
+
     @Min(1)
     public int getScheduleSplitBatchSize()
     {
@@ -945,6 +947,18 @@ public class QueryManagerConfig
     public QueryManagerConfig setFaultTolerantExecutionForcePreferredWritePartitioningEnabled(boolean faultTolerantExecutionForcePreferredWritePartitioningEnabled)
     {
         this.faultTolerantExecutionForcePreferredWritePartitioningEnabled = faultTolerantExecutionForcePreferredWritePartitioningEnabled;
+        return this;
+    }
+
+    public int getStaticHashDistributionSplitAssignerPartitionsCount()
+    {
+        return staticHashDistributionSplitAssignerPartitionsCount;
+    }
+
+    @Config("fault-tolerant-static-hash-distribution-split-assigner-partitions-count")
+    public QueryManagerConfig setStaticHashDistributionSplitAssignerPartitionsCount(int staticHashDistributionSplitAssignerPartitionsCount)
+    {
+        this.staticHashDistributionSplitAssignerPartitionsCount = staticHashDistributionSplitAssignerPartitionsCount;
         return this;
     }
 
