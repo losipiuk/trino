@@ -755,8 +755,8 @@ public class EventDrivenFaultTolerantQueryScheduler
                 if (childExecution == null) {
                     return false;
                 }
-                // TODO enable speculative execution
-                if (childExecution.getState() != StageState.FINISHED) {
+                // wait for all child task partitions to be enumerated
+                if (!childExecution.isNoMorePartitions()) {
                     return false;
                 }
             }
@@ -1311,16 +1311,21 @@ public class EventDrivenFaultTolerantQueryScheduler
 
         public void noMorePartitions()
         {
+            noMorePartitions = true;
             if (getState().isDone()) {
                 return;
             }
 
-            noMorePartitions = true;
             if (remainingPartitions.isEmpty()) {
                 stage.finish();
                 // TODO close exchange early
                 taskSource.close();
             }
+        }
+
+        public boolean isNoMorePartitions()
+        {
+            return noMorePartitions;
         }
 
         public void closeExchange()
@@ -1618,7 +1623,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         public OutputDataSizeEstimate getOutputDataSize()
         {
             // TODO enable speculative execution
-            checkState(stage.getState() == StageState.FINISHED, "stage %s is expected to be in FINISHED state, got %s", stage.getStageId(), stage.getState());
+            //checkState(stage.getState() == StageState.FINISHED, "stage %s is expected to be in FINISHED state, got %s", stage.getStageId(), stage.getState());
             return new OutputDataSizeEstimate(ImmutableLongArray.copyOf(outputDataSize));
         }
 
