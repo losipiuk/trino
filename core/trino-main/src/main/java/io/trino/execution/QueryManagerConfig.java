@@ -129,6 +129,8 @@ public class QueryManagerConfig
     private boolean faultTolerantExecutionForcePreferredWritePartitioningEnabled = true;
 
     private int staticHashDistributionSplitAssignerPartitionsCount = 50;
+    private boolean staticHashDistributionSplitAssignerAdjustToInputPartitionsCount = true;
+    private double staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor = 1.0;
 
     @Min(1)
     public int getScheduleSplitBatchSize()
@@ -959,6 +961,30 @@ public class QueryManagerConfig
     public QueryManagerConfig setStaticHashDistributionSplitAssignerPartitionsCount(int staticHashDistributionSplitAssignerPartitionsCount)
     {
         this.staticHashDistributionSplitAssignerPartitionsCount = staticHashDistributionSplitAssignerPartitionsCount;
+        return this;
+    }
+
+    public boolean getStaticHashDistributionSplitAssignerAdjustToInputPartitionsCount()
+    {
+        return staticHashDistributionSplitAssignerAdjustToInputPartitionsCount;
+    }
+
+    @Config("fault-tolerant-static-hash-distribution-split-assigner-adjust-to-input-partitions-count")
+    public QueryManagerConfig setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCount(boolean staticHashDistributionSplitAssignerAdjustToInputPartitionsCount)
+    {
+        this.staticHashDistributionSplitAssignerAdjustToInputPartitionsCount = staticHashDistributionSplitAssignerAdjustToInputPartitionsCount;
+        return this;
+    }
+
+    public double getStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor()
+    {
+        return staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor;
+    }
+
+    @Config("fault-tolerant-static-hash-distribution-split-assigner-adjust-to-input-partitions-count-factor")
+    public QueryManagerConfig setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor(double staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor)
+    {
+        this.staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor = staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor;
         return this;
     }
 

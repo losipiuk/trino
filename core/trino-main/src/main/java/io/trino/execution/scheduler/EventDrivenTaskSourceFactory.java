@@ -75,6 +75,8 @@ public class EventDrivenTaskSourceFactory
     private final TableExecuteContextManager tableExecuteContextManager;
     private final int splitBatchSize;
     private final int staticHashDistributionSplitAssignerPartitionsCount;
+    private final boolean staticHashDistributionSplitAssignerAdjustToInputPartitionsCount;
+    private final double staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor;
 
     @Inject
     public EventDrivenTaskSourceFactory(
@@ -90,7 +92,9 @@ public class EventDrivenTaskSourceFactory
                 nodeManager,
                 tableExecuteContextManager,
                 requireNonNull(queryManagerConfig, "queryManagerConfig is null").getScheduleSplitBatchSize(),
-                queryManagerConfig.getStaticHashDistributionSplitAssignerPartitionsCount());
+                queryManagerConfig.getStaticHashDistributionSplitAssignerPartitionsCount(),
+                queryManagerConfig.getStaticHashDistributionSplitAssignerAdjustToInputPartitionsCount(),
+                queryManagerConfig.getStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor());
     }
 
     public EventDrivenTaskSourceFactory(
@@ -99,7 +103,9 @@ public class EventDrivenTaskSourceFactory
             InternalNodeManager nodeManager,
             TableExecuteContextManager tableExecuteContextManager,
             int splitBatchSize,
-            int staticHashDistributionSplitAssignerPartitionsCount)
+            int staticHashDistributionSplitAssignerPartitionsCount,
+            boolean staticHashDistributionSplitAssignerAdjustToInputPartitionsCount,
+            double staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor)
     {
         this.splitSourceFactory = requireNonNull(splitSourceFactory, "splitSourceFactory is null");
         this.executor = requireNonNull(executor, "executor is null");
@@ -107,6 +113,8 @@ public class EventDrivenTaskSourceFactory
         this.tableExecuteContextManager = requireNonNull(tableExecuteContextManager, "tableExecuteContextManager is null");
         this.splitBatchSize = splitBatchSize;
         this.staticHashDistributionSplitAssignerPartitionsCount = staticHashDistributionSplitAssignerPartitionsCount;
+        this.staticHashDistributionSplitAssignerAdjustToInputPartitionsCount = staticHashDistributionSplitAssignerAdjustToInputPartitionsCount;
+        this.staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor = staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor;
     }
 
     public EventDrivenTaskSource create(
@@ -116,7 +124,8 @@ public class EventDrivenTaskSourceFactory
             Map<PlanFragmentId, Exchange> sourceExchanges,
             FaultTolerantPartitioningScheme sourcePartitioningScheme,
             LongConsumer getSplitTimeRecorder,
-            Map<PlanNodeId, OutputDataSizeEstimate> outputDataSizeEstimates)
+            Map<PlanNodeId, OutputDataSizeEstimate> outputDataSizeEstimates,
+            Map<PlanFragmentId, Integer> outputPartitionsCounts)
     {
         ImmutableSetMultimap.Builder<PlanNodeId, PlanFragmentId> remoteSources = ImmutableSetMultimap.builder();
         for (RemoteSourceNode remoteSource : fragment.getRemoteSourceNodes()) {
@@ -136,6 +145,7 @@ public class EventDrivenTaskSourceFactory
                         session,
                         fragment,
                         outputDataSizeEstimates,
+                        outputPartitionsCounts,
                         sourcePartitioningScheme,
                         standardSplitSizeInBytes,
                         maxTaskSplitCount),
@@ -150,6 +160,7 @@ public class EventDrivenTaskSourceFactory
             Session session,
             PlanFragment fragment,
             Map<PlanNodeId, OutputDataSizeEstimate> outputDataSizeEstimates,
+            Map<PlanFragmentId, Integer> outputPartitionsCounts,
             FaultTolerantPartitioningScheme sourcePartitioningScheme,
             long standardSplitSizeInBytes,
             int maxArbitraryDistributionTaskSplitCount)
@@ -230,10 +241,13 @@ public class EventDrivenTaskSourceFactory
                 (partitioning.getConnectorHandle() instanceof MergePartitioningHandle))) {
             return StaticHashDistributionSplitAssigner.create(
                     staticHashDistributionSplitAssignerPartitionsCount,
+                    staticHashDistributionSplitAssignerAdjustToInputPartitionsCount,
+                    staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor,
                     partitionedSources,
                     replicatedSources,
                     sourcePartitioningScheme,
-                    fragment);
+                    fragment,
+                    outputPartitionsCounts);
         }
         if (partitioning.equals(FIXED_HASH_DISTRIBUTION) || partitioning.getCatalogHandle().isPresent() ||
                 (partitioning.getConnectorHandle() instanceof MergePartitioningHandle)) {

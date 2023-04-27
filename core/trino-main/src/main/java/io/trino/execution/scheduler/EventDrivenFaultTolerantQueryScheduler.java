@@ -799,11 +799,13 @@ public class EventDrivenFaultTolerantQueryScheduler
 
                 ImmutableMap.Builder<PlanFragmentId, Exchange> sourceExchanges = ImmutableMap.builder();
                 Map<PlanFragmentId, OutputDataSizeEstimate> outputEstimates = new HashMap<>();
+                ImmutableMap.Builder<PlanFragmentId, Integer> outputPartitionsCounts = ImmutableMap.builder();
                 for (SubPlan child : subPlan.getChildren()) {
                     PlanFragmentId childFragmentId = child.getFragment().getId();
                     StageExecution childExecution = getStageExecution(getStageId(childFragmentId));
                     sourceExchanges.put(childFragmentId, childExecution.getExchange());
                     outputEstimates.put(childFragmentId, childExecution.getOutputDataSize());
+                    outputPartitionsCounts.put(childFragmentId, childExecution.getPartitionsCount());
                     stageConsumers.put(childExecution.getStageId(), stageId);
                 }
 
@@ -826,7 +828,8 @@ public class EventDrivenFaultTolerantQueryScheduler
                         sourceExchanges.buildOrThrow(),
                         partitioningSchemeFactory.get(fragment.getPartitioning(), fragment.getPartitionCount()),
                         stage::recordGetSplitTime,
-                        outputDataSizeEstimates.buildOrThrow()));
+                        outputDataSizeEstimates.buildOrThrow(),
+                        outputPartitionsCounts.buildOrThrow()));
 
                 FaultTolerantPartitioningScheme sinkPartitioningScheme = partitioningSchemeFactory.get(
                         fragment.getOutputPartitioningScheme().getPartitioning().getHandle(),
@@ -1326,6 +1329,12 @@ public class EventDrivenFaultTolerantQueryScheduler
         public boolean isNoMorePartitions()
         {
             return noMorePartitions;
+        }
+
+        public int getPartitionsCount()
+        {
+            checkState(noMorePartitions, "noMorePartitions not set yet");
+            return partitions.size();
         }
 
         public void closeExchange()

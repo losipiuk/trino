@@ -99,7 +99,9 @@ public class TestQueryManagerConfig
                 .setFaultTolerantExecutionMinPartitionCountForWrite(50)
                 .setFaultTolerantExecutionForcePreferredWritePartitioningEnabled(true)
                 .setMaxWriterTasksCount(100)
-                .setStaticHashDistributionSplitAssignerPartitionsCount(50));
+                .setStaticHashDistributionSplitAssignerPartitionsCount(50)
+                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCount(true)
+                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor(1.0));
     }
 
     @Test
@@ -167,6 +169,8 @@ public class TestQueryManagerConfig
                 .put("experimental.fault-tolerant-execution-force-preferred-write-partitioning-enabled", "false")
                 .put("query.max-writer-task-count", "101")
                 .put("fault-tolerant-static-hash-distribution-split-assigner-partitions-count", "51")
+                .put("fault-tolerant-static-hash-distribution-split-assigner-adjust-to-input-partitions-count", "false")
+                .put("fault-tolerant-static-hash-distribution-split-assigner-adjust-to-input-partitions-count-factor", "1.1")
                 .buildOrThrow();
 
         QueryManagerConfig expected = new QueryManagerConfig()
@@ -230,7 +234,9 @@ public class TestQueryManagerConfig
                 .setFaultTolerantExecutionMinPartitionCountForWrite(99)
                 .setFaultTolerantExecutionForcePreferredWritePartitioningEnabled(false)
                 .setMaxWriterTasksCount(101)
-                .setStaticHashDistributionSplitAssignerPartitionsCount(51);
+                .setStaticHashDistributionSplitAssignerPartitionsCount(51)
+                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCount(false)
+                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor(1.1);
 
         assertFullMapping(properties, expected);
     }
