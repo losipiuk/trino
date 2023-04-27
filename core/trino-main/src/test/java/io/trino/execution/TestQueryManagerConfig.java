@@ -101,7 +101,8 @@ public class TestQueryManagerConfig
                 .setMaxWriterTasksCount(100)
                 .setStaticHashDistributionSplitAssignerPartitionsCount(50)
                 .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCount(true)
-                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor(1.0));
+                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor(1.0)
+                .setFaultTolerantExecutionPrioritizeBuildSide(true));
     }
 
     @Test
@@ -171,6 +172,7 @@ public class TestQueryManagerConfig
                 .put("fault-tolerant-static-hash-distribution-split-assigner-partitions-count", "51")
                 .put("fault-tolerant-static-hash-distribution-split-assigner-adjust-to-input-partitions-count", "false")
                 .put("fault-tolerant-static-hash-distribution-split-assigner-adjust-to-input-partitions-count-factor", "1.1")
+                .put("fault-tolerant-execution-prioritize-build-size", "false")
                 .buildOrThrow();
 
         QueryManagerConfig expected = new QueryManagerConfig()
@@ -236,7 +238,8 @@ public class TestQueryManagerConfig
                 .setMaxWriterTasksCount(101)
                 .setStaticHashDistributionSplitAssignerPartitionsCount(51)
                 .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCount(false)
-                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor(1.1);
+                .setStaticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor(1.1)
+                .setFaultTolerantExecutionPrioritizeBuildSide(false);
 
         assertFullMapping(properties, expected);
     }

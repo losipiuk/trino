@@ -138,6 +138,7 @@ public class SqlQueryExecution
     private final EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory;
     private final TaskDescriptorStorage taskDescriptorStorage;
     private final PlanOptimizersStatsCollector planOptimizersStatsCollector;
+    private final boolean prioritizeBuildSide;
 
     private SqlQueryExecution(
             PreparedQuery preparedQuery,
@@ -172,7 +173,8 @@ public class SqlQueryExecution
             SqlTaskManager coordinatorTaskManager,
             ExchangeManagerRegistry exchangeManagerRegistry,
             EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory,
-            TaskDescriptorStorage taskDescriptorStorage)
+            TaskDescriptorStorage taskDescriptorStorage,
+            boolean prioritizeBuildSide)
     {
         try (SetThreadName ignored = new SetThreadName("Query-%s", stateMachine.getQueryId())) {
             this.slug = requireNonNull(slug, "slug is null");
@@ -222,6 +224,7 @@ public class SqlQueryExecution
             this.eventDrivenTaskSourceFactory = requireNonNull(eventDrivenTaskSourceFactory, "taskSourceFactory is null");
             this.taskDescriptorStorage = requireNonNull(taskDescriptorStorage, "taskDescriptorStorage is null");
             this.planOptimizersStatsCollector = requireNonNull(planOptimizersStatsCollector, "planOptimizersStatsCollector is null");
+            this.prioritizeBuildSide = prioritizeBuildSide;
         }
     }
 
@@ -559,7 +562,8 @@ public class SqlQueryExecution
                         failureDetector,
                         dynamicFilterService,
                         taskExecutionStats,
-                        plan.getRoot());
+                        plan.getRoot(),
+                        prioritizeBuildSide);
                 break;
             default:
                 throw new IllegalArgumentException("Unexpected retry policy: " + retryPolicy);
@@ -768,6 +772,7 @@ public class SqlQueryExecution
         private final ExchangeManagerRegistry exchangeManagerRegistry;
         private final EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory;
         private final TaskDescriptorStorage taskDescriptorStorage;
+        private final boolean prioritizeBuildSide;
 
         @Inject
         SqlQueryExecutionFactory(
@@ -828,6 +833,7 @@ public class SqlQueryExecution
             this.exchangeManagerRegistry = requireNonNull(exchangeManagerRegistry, "exchangeManagerRegistry is null");
             this.eventDrivenTaskSourceFactory = requireNonNull(eventDrivenTaskSourceFactory, "eventDrivenTaskSourceFactory is null");
             this.taskDescriptorStorage = requireNonNull(taskDescriptorStorage, "taskDescriptorStorage is null");
+            this.prioritizeBuildSide = config.isFaultTolerantExecutionPrioritizeBuildSide();
         }
 
         @Override
@@ -875,7 +881,8 @@ public class SqlQueryExecution
                     coordinatorTaskManager,
                     exchangeManagerRegistry,
                     eventDrivenTaskSourceFactory,
-                    taskDescriptorStorage);
+                    taskDescriptorStorage,
+                    prioritizeBuildSide);
         }
     }
 }

@@ -132,6 +132,8 @@ public class QueryManagerConfig
     private boolean staticHashDistributionSplitAssignerAdjustToInputPartitionsCount = true;
     private double staticHashDistributionSplitAssignerAdjustToInputPartitionsCountFactor = 1.0;
 
+    private boolean faultTolerantExecutionPrioritizeBuildSide = true;
+
     @Min(1)
     public int getScheduleSplitBatchSize()
     {
@@ -991,5 +993,17 @@ public class QueryManagerConfig
     public void applyFaultTolerantExecutionDefaults()
     {
         remoteTaskMaxErrorDuration = new Duration(1, MINUTES);
+    }
+
+    public boolean isFaultTolerantExecutionPrioritizeBuildSide()
+    {
+        return faultTolerantExecutionPrioritizeBuildSide;
+    }
+
+    @Config("fault-tolerant-execution-prioritize-build-size")
+    public QueryManagerConfig setFaultTolerantExecutionPrioritizeBuildSide(boolean faultTolerantExecutionPrioritizeBuildSide)
+    {
+        this.faultTolerantExecutionPrioritizeBuildSide = faultTolerantExecutionPrioritizeBuildSide;
+        return this;
     }
 }

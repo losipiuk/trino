@@ -182,6 +182,7 @@ public class EventDrivenFaultTolerantQueryScheduler
     private final DynamicFilterService dynamicFilterService;
     private final TaskExecutionStats taskExecutionStats;
     private final SubPlan originalPlan;
+    private final boolean prioritizeBuildSide;
 
     private final StageRegistry stageRegistry;
 
@@ -209,7 +210,8 @@ public class EventDrivenFaultTolerantQueryScheduler
             FailureDetector failureDetector,
             DynamicFilterService dynamicFilterService,
             TaskExecutionStats taskExecutionStats,
-            SubPlan originalPlan)
+            SubPlan originalPlan,
+            boolean prioritizeBuildSide)
     {
         this.queryStateMachine = requireNonNull(queryStateMachine, "queryStateMachine is null");
         RetryPolicy retryPolicy = getRetryPolicy(queryStateMachine.getSession());
@@ -232,6 +234,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         this.dynamicFilterService = requireNonNull(dynamicFilterService, "dynamicFilterService is null");
         this.taskExecutionStats = requireNonNull(taskExecutionStats, "taskExecutionStats is null");
         this.originalPlan = requireNonNull(originalPlan, "originalPlan is null");
+        this.prioritizeBuildSide = prioritizeBuildSide;
 
         stageRegistry = new StageRegistry(queryStateMachine, originalPlan);
     }
@@ -300,7 +303,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                     stageRegistry,
                     taskExecutionStats,
                     dynamicFilterService,
-                    new SchedulingDelayer(
+                    prioritizeBuildSide, new SchedulingDelayer(
                             getRetryInitialDelay(session),
                             getRetryMaxDelay(session),
                             getRetryDelayScaleFactor(session),
@@ -480,6 +483,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         private final StageRegistry stageRegistry;
         private final TaskExecutionStats taskExecutionStats;
         private final DynamicFilterService dynamicFilterService;
+        private final boolean prioritizeBuildSide;
 
         private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>();
         private final List<Event> eventBuffer = new ArrayList<>(EVENT_BUFFER_CAPACITY);
@@ -524,7 +528,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                 StageRegistry stageRegistry,
                 TaskExecutionStats taskExecutionStats,
                 DynamicFilterService dynamicFilterService,
-                SchedulingDelayer schedulingDelayer,
+                boolean prioritizeBuildSide, SchedulingDelayer schedulingDelayer,
                 SubPlan plan)
         {
             this.queryStateMachine = requireNonNull(queryStateMachine, "queryStateMachine is null");
@@ -552,8 +556,9 @@ public class EventDrivenFaultTolerantQueryScheduler
             this.dynamicFilterService = requireNonNull(dynamicFilterService, "dynamicFilterService is null");
             this.schedulingDelayer = requireNonNull(schedulingDelayer, "schedulingDelayer is null");
             this.plan = requireNonNull(plan, "plan is null");
+            this.prioritizeBuildSide = prioritizeBuildSide;
 
-            planInTopologicalOrder = sortPlanInTopologicalOrder(plan);
+            planInTopologicalOrder = sortPlanInTopologicalOrder(plan, prioritizeBuildSide);
         }
 
         public void run()
@@ -715,7 +720,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         private void optimize()
         {
             plan = optimizePlan(plan);
-            planInTopologicalOrder = sortPlanInTopologicalOrder(plan);
+            planInTopologicalOrder = sortPlanInTopologicalOrder(plan, prioritizeBuildSide);
             stageRegistry.updatePlan(plan);
         }
 
@@ -1134,12 +1139,12 @@ public class EventDrivenFaultTolerantQueryScheduler
             return execution;
         }
 
-        private static List<SubPlan> sortPlanInTopologicalOrder(SubPlan subPlan)
+        private static List<SubPlan> sortPlanInTopologicalOrder(SubPlan subPlan, boolean prioritizeBuildSide)
         {
             ImmutableList.Builder<SubPlan> result = ImmutableList.builder();
             SuccessorsFunction<SubPlan> getChildren = plan -> {
                 List<SubPlan> children = plan.getChildren();
-                if (plan.getFragment().getRoot() instanceof JoinNode) {
+                if (prioritizeBuildSide && plan.getFragment().getRoot() instanceof JoinNode) {
                     // for Join let's reverse children order so build side appears earlier in topological order
                     children = ImmutableList.copyOf(Lists.reverse(children));
                 }
