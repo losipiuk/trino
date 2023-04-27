@@ -21,8 +21,10 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import com.google.common.graph.SuccessorsFunction;
 import com.google.common.graph.Traverser;
 import com.google.common.io.Closer;
 import com.google.common.primitives.ImmutableLongArray;
@@ -82,6 +84,7 @@ import io.trino.split.RemoteSplit;
 import io.trino.sql.planner.NodePartitioningManager;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.sql.planner.SubPlan;
+import io.trino.sql.planner.plan.JoinNode;
 import io.trino.sql.planner.plan.PlanFragmentId;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.planner.plan.RemoteSourceNode;
@@ -1134,7 +1137,15 @@ public class EventDrivenFaultTolerantQueryScheduler
         private static List<SubPlan> sortPlanInTopologicalOrder(SubPlan subPlan)
         {
             ImmutableList.Builder<SubPlan> result = ImmutableList.builder();
-            Traverser.forTree(SubPlan::getChildren).depthFirstPostOrder(subPlan).forEach(result::add);
+            SuccessorsFunction<SubPlan> getChildren = plan -> {
+                List<SubPlan> children = plan.getChildren();
+                if (plan.getFragment().getRoot() instanceof JoinNode) {
+                    // for Join let's reverse children order so build side appears earlier in topological order
+                    children = ImmutableList.copyOf(Lists.reverse(children));
+                }
+                return children;
+            };
+            Traverser.forTree(getChildren).depthFirstPostOrder(subPlan).forEach(result::add);
             return result.build();
         }
 
