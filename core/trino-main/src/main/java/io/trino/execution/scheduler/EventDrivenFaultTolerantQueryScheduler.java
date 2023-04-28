@@ -883,8 +883,13 @@ public class EventDrivenFaultTolerantQueryScheduler
                 }
                 MemoryRequirements memoryRequirements = stageExecution.getMemoryRequirements(partitionId);
                 NodeLease lease = nodeAllocator.acquire(nodeRequirements.get(), memoryRequirements.getRequiredMemory());
-                lease.getNode().addListener(() -> eventQueue.add(Event.WAKE_UP), queryExecutor);
+                lease.getNode().addListener(
+                        () -> {
+                            log.info("NODE_ACQUIRED %s", scheduledTask);
+                            eventQueue.add(Event.WAKE_UP);
+                        }, queryExecutor);
                 preSchedulingTaskContexts.put(scheduledTask, new PreSchedulingTaskContext(lease));
+                log.info("NODE_ACQUISITIONS PUT %s %s", scheduledTask, lease);
                 tasksWaitingForNode++;
             }
         }
@@ -904,15 +909,19 @@ public class EventDrivenFaultTolerantQueryScheduler
                 NodeLease nodeLease = context.getNodeLease();
                 StageExecution stageExecution = getStageExecution(scheduledTask.stageId());
                 if (stageExecution.getState().isDone()) {
+                    log.info("NODE_ACQUISITIONS PROCESS %s; stage already done", scheduledTask);
                     iterator.remove();
                     nodeLease.release();
                 }
                 else if (nodeLease.getNode().isDone()) {
+                    log.info("NODE_ACQUISITIONS PROCESS %s; got node", scheduledTask);
                     context.setWaitingForSinkInstanceHandle(true);
                     Optional<GetExchangeSinkInstanceHandleResult> getExchangeSinkInstanceHandleResult = stageExecution.getExchangeSinkInstanceHandle(scheduledTask.partitionId());
                     if (getExchangeSinkInstanceHandleResult.isPresent()) {
+                        log.info("NODE_ACQUISITIONS PROCESS %s; getExchangeSinkInstanceHandleResult is present", scheduledTask);
                         CompletableFuture<ExchangeSinkInstanceHandle> sinkInstanceHandleFuture = getExchangeSinkInstanceHandleResult.get().exchangeSinkInstanceHandleFuture();
                         sinkInstanceHandleFuture.whenComplete((sinkInstanceHandle, throwable) -> {
+                            log.info("NODE_ACQUISITIONS PROCESS %s; sinkInstanceHandleFuture.whenComplete; throwable=%s", scheduledTask, throwable);
                             if (throwable != null) {
                                 eventQueue.add(new StageFailureEvent(scheduledTask.stageId, throwable));
                             }
@@ -927,6 +936,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                         });
                     }
                     else {
+                        log.info("NODE_ACQUISITIONS PROCESS %s; getExchangeSinkInstanceHandleResult is empty", scheduledTask);
                         iterator.remove();
                         nodeLease.release();
                     }
@@ -952,6 +962,7 @@ public class EventDrivenFaultTolerantQueryScheduler
             try {
                 InternalNode node = getDone(nodeLease.getNode());
                 Optional<RemoteTask> remoteTask = stageExecution.schedule(partitionId, sinkInstanceHandle, attempt, node);
+                log.info("SCHEDULE %s; %s", scheduledTask, remoteTask);
                 remoteTask.ifPresent(task -> {
                     task.addStateChangeListener(createExchangeSinkInstanceHandleUpdateRequiredListener());
                     task.addStateChangeListener(taskStatus -> {

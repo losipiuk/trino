@@ -46,6 +46,8 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -65,6 +67,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
@@ -199,9 +202,18 @@ public class BinPackingNodeAllocatorService
         nodePoolMemoryInfos.set(newNodePoolMemoryInfos.buildOrThrow());
     }
 
+    private volatile Instant lastDebugTime = Instant.now();
+
     @VisibleForTesting
     synchronized void processPendingAcquires()
     {
+        if (Instant.now().minus(15, ChronoUnit.SECONDS).isAfter(lastDebugTime)) {
+            lastDebugTime = Instant.now();
+            log.info("PENDING ACQUIRES %s", pendingAcquires);
+            log.info("FULFILLED ACQUIRES %s", fulfilledAcquires);
+            log.info("NODE POOLS %s", nodePoolMemoryInfos.get());
+        }
+
         // synchronized only for sake manual triggering in test code. In production code it should only be called by single thread
         Iterator<PendingAcquire> iterator = pendingAcquires.iterator();
 
@@ -350,6 +362,17 @@ public class BinPackingNodeAllocatorService
         {
             noMatchingNodeStopwatch.reset();
         }
+
+        @Override
+        public String toString()
+        {
+            return toStringHelper(this)
+                    .add("nodeRequirements", nodeRequirements)
+                    .add("memoryRequirement", memoryRequirement)
+                    .add("lease", lease)
+                    .add("noMatchingNodeStopwatch", noMatchingNodeStopwatch)
+                    .toString();
+        }
     }
 
     private class BinPackingNodeLease
@@ -426,6 +449,18 @@ public class BinPackingNodeAllocatorService
             if (memoryDeallocated.compareAndSet(false, true)) {
                 updateAllocatedMemory(node, -memoryLease);
             }
+        }
+
+        @Override
+        public String toString()
+        {
+            return toStringHelper(this)
+                    .add("node", node)
+                    .add("released", released)
+                    .add("memoryDeallocated", memoryDeallocated)
+                    .add("memoryLease", memoryLease)
+                    .add("taskId", taskId)
+                    .toString();
         }
     }
 
