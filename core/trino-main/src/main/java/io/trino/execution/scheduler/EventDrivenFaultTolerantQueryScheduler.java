@@ -1026,7 +1026,6 @@ public class EventDrivenFaultTolerantQueryScheduler
                         {
                             SplitAssignmentEvent e = new SplitAssignmentEvent(stageExecution.getStageId(), result);
                             eventQueue.add(e);
-                            log.info("EVENT QUEUE ADD %s", e);
                         }
 
                         @Override
@@ -1096,6 +1095,13 @@ public class EventDrivenFaultTolerantQueryScheduler
         @Override
         public void onSplitAssignment(SplitAssignmentEvent event)
         {
+            if (event.getAssignmentResult().noMorePartitions() ||
+                    !event.getAssignmentResult().partitionsAdded().isEmpty() ||
+                    !event.getAssignmentResult().partitionUpdates().isEmpty() ||
+                    !event.getAssignmentResult().sealedPartitions().isEmpty()) {
+                log.info("ON SPLIT ASSIGNMENT %s", event);
+            }
+
             StageExecution stageExecution = getStageExecution(event.getStageId());
             AssignmentResult assignment = event.getAssignmentResult();
             for (Partition partition : assignment.partitionsAdded()) {
