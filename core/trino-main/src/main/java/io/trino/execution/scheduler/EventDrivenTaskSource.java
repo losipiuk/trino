@@ -464,6 +464,7 @@ class EventDrivenTaskSource
                             synchronized (listeners) {
                                 listeners.remove(listener);
                             }
+                            log.info("LISTENER REMOVE %s", listener);
                         }
                     },
                     directExecutor());
