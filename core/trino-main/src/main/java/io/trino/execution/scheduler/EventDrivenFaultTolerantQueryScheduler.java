@@ -13,7 +13,6 @@
  */
 package io.trino.execution.scheduler;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -115,6 +114,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
@@ -2283,7 +2283,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         @Override
         public String toString()
         {
-            return MoreObjects.toStringHelper(this)
+            return toStringHelper(this)
                     .add("assignmentResult", assignmentResult)
                     .toString();
         }
@@ -2330,7 +2330,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         @Override
         public String toString()
         {
-            return MoreObjects.toStringHelper(this)
+            return toStringHelper(this)
                     .add("stageId", stageId)
                     .toString();
         }
