@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.ForwardingListenableFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import io.airlift.log.Logger;
 import io.trino.exchange.SpoolingExchangeInput;
 import io.trino.execution.TableExecuteContext;
 import io.trino.execution.TableExecuteContextManager;
@@ -72,6 +73,8 @@ import static java.util.Objects.requireNonNull;
 class EventDrivenTaskSource
         implements Closeable
 {
+    private static final Logger log = Logger.get(EventDrivenTaskSource.class);
+
     private final QueryId queryId;
     private final TableExecuteContextManager tableExecuteContextManager;
     private final Map<PlanFragmentId, Exchange> sourceExchanges;
@@ -272,10 +275,15 @@ class EventDrivenTaskSource
                             tableExecuteContext.setSplitsInfo(info);
                         });
                     }
-                    return new SplitBatchReference(batch);
+
+                    SplitBatchReference splitBatchReference = new SplitBatchReference(batch);
+                    log.info("EDT IdempotentSplitSource.getNextBatch %s -> %s", splitSource, splitBatchReference);
+                    return splitBatchReference;
                 }, directExecutor())));
             }
-            return future.map(CallbackProxyFuture::addListener);
+            Optional<ListenableFuture<SplitBatchReference>> returnedFuture = future.map(CallbackProxyFuture::addListener);
+            log.info("EDT IdempotentSplitSource returnedFuture %s", returnedFuture);
+            return returnedFuture;
         }
 
         @Override
@@ -356,7 +364,9 @@ class EventDrivenTaskSource
                         for (int partition : partitionToHandles.keySet()) {
                             splits.addAll(createRemoteSplits(partitionToHandles.get(partition)));
                         }
-                        return new SplitBatch(splits.build(), batch.lastBatch());
+                        SplitBatch splitBatch = new SplitBatch(splits.build(), batch.lastBatch());
+                        log.info("EDT ExchangeSplitSource.getNextBatch %s, %s -> %s", this, handleSource, splitBatch);
+                        return splitBatch;
                     }, directExecutor());
         }
 
@@ -470,6 +480,9 @@ class EventDrivenTaskSource
                 listeners.clear();
             }
 
+            if (!futures.isEmpty()) {
+                log.info("EDT propagateIfNecessary; finalizing futures %s with %s", futures, delegate);
+            }
             for (SettableFuture<T> future : futures) {
                 future.setFuture(delegate);
             }
