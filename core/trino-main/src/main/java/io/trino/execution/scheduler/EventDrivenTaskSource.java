@@ -58,6 +58,7 @@ import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -334,6 +335,14 @@ class EventDrivenTaskSource
             {
                 advance(splitBatch.isLastBatch());
                 return splitBatch;
+            }
+
+            @Override
+            public String toString()
+            {
+                return toStringHelper(this)
+                        .add("splitBatch", splitBatch)
+                        .toString();
             }
         }
     }
