@@ -282,7 +282,9 @@ class EventDrivenTaskSource
                 }, directExecutor())));
             }
             Optional<ListenableFuture<SplitBatchReference>> returnedFuture = future.map(CallbackProxyFuture::addListener);
-            log.info("EDT IdempotentSplitSource returnedFuture %s", returnedFuture);
+            if (future.isPresent()) {
+                log.info("EDT IdempotentSplitSource returnedFuture %s", returnedFuture);
+            }
             return returnedFuture;
         }
 
