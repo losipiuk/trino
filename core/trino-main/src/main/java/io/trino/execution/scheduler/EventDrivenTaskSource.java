@@ -261,6 +261,8 @@ class EventDrivenTaskSource
             this.getSplitTimeRecorder = requireNonNull(getSplitTimeRecorder, "getSplitTimeRecorder is null");
         }
 
+        private Optional<CallbackProxyFuture<SplitBatchReference>> lastReturnedFuture = Optional.empty();
+
         public synchronized Optional<ListenableFuture<SplitBatchReference>> getNext()
         {
             if (future.isEmpty() && !finished) {
@@ -282,8 +284,9 @@ class EventDrivenTaskSource
                 }, directExecutor())));
             }
             Optional<ListenableFuture<SplitBatchReference>> returnedFuture = future.map(CallbackProxyFuture::addListener);
-            if (future.isPresent()) {
+            if (future.isPresent() && future != lastReturnedFuture) {
                 log.info("EDT IdempotentSplitSource returnedFuture %s", returnedFuture);
+                lastReturnedFuture = future;
             }
             return returnedFuture;
         }
