@@ -13,6 +13,7 @@
  */
 package io.trino.execution.scheduler;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -1023,7 +1024,9 @@ public class EventDrivenFaultTolerantQueryScheduler
                         @Override
                         public void onSuccess(AssignmentResult result)
                         {
-                            eventQueue.add(new SplitAssignmentEvent(stageExecution.getStageId(), result));
+                            SplitAssignmentEvent e = new SplitAssignmentEvent(stageExecution.getStageId(), result);
+                            eventQueue.add(e);
+                            log.info("EVENT QUEUE ADD %s", e);
                         }
 
                         @Override
@@ -2270,6 +2273,14 @@ public class EventDrivenFaultTolerantQueryScheduler
         {
             listener.onSplitAssignment(this);
         }
+
+        @Override
+        public String toString()
+        {
+            return MoreObjects.toStringHelper(this)
+                    .add("assignmentResult", assignmentResult)
+                    .toString();
+        }
     }
 
     private static class StageFailureEvent
@@ -2308,6 +2319,14 @@ public class EventDrivenFaultTolerantQueryScheduler
         public StageId getStageId()
         {
             return stageId;
+        }
+
+        @Override
+        public String toString()
+        {
+            return MoreObjects.toStringHelper(this)
+                    .add("stageId", stageId)
+                    .toString();
         }
     }
 
