@@ -198,8 +198,9 @@ class EventDrivenTaskSource
 
         ListMultimap<Integer, Split> splits = splitBatch.getSplits().stream()
                 .collect(toImmutableListMultimap(this::getSplitPartition, Function.identity()));
-        log.info("ASSIGN %s %s", splits, noMoreSplits);
-        return assigner.assign(sourceNodeId, splits, noMoreSplits);
+        AssignmentResult assignmentResult = assigner.assign(sourceNodeId, splits, noMoreSplits);
+        log.info("ASSIGN %s %s -> %s", splits, noMoreSplits, assignmentResult);
+        return assignmentResult;
     }
 
     private int getSplitPartition(Split split)
