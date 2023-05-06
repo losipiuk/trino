@@ -179,26 +179,30 @@ class EventDrivenTaskSource
         return Futures.transform(firstCompleted, this::process, executor);
     }
 
-    private synchronized AssignmentResult process(IdempotentSplitSource.SplitBatchReference batchReference)
+    private AssignmentResult process(IdempotentSplitSource.SplitBatchReference batchReference)
     {
-        PlanNodeId sourceNodeId = batchReference.getPlanNodeId();
-        Optional<PlanFragmentId> sourceFragmentId = batchReference.getSourceFragmentId();
-        SplitBatch splitBatch = batchReference.getSplitBatchAndAdvance();
-
+        AssignmentResult assignmentResult;
+        ListMultimap<Integer, Split> splits;
         boolean noMoreSplits = false;
-        if (splitBatch.isLastBatch()) {
-            if (sourceFragmentId.isPresent()) {
-                completedFragments.add(sourceFragmentId.get());
-                noMoreSplits = completedFragments.containsAll(remoteSources.get(sourceNodeId));
-            }
-            else {
-                noMoreSplits = true;
-            }
-        }
+        synchronized (this) {
+            PlanNodeId sourceNodeId = batchReference.getPlanNodeId();
+            Optional<PlanFragmentId> sourceFragmentId = batchReference.getSourceFragmentId();
+            SplitBatch splitBatch = batchReference.getSplitBatchAndAdvance();
 
-        ListMultimap<Integer, Split> splits = splitBatch.getSplits().stream()
-                .collect(toImmutableListMultimap(this::getSplitPartition, Function.identity()));
-        AssignmentResult assignmentResult = assigner.assign(sourceNodeId, splits, noMoreSplits);
+            if (splitBatch.isLastBatch()) {
+                if (sourceFragmentId.isPresent()) {
+                    completedFragments.add(sourceFragmentId.get());
+                    noMoreSplits = completedFragments.containsAll(remoteSources.get(sourceNodeId));
+                }
+                else {
+                    noMoreSplits = true;
+                }
+            }
+
+            splits = splitBatch.getSplits().stream()
+                    .collect(toImmutableListMultimap(this::getSplitPartition, Function.identity()));
+            assignmentResult = assigner.assign(sourceNodeId, splits, noMoreSplits);
+        }
         log.info("ASSIGN %s %s -> %s", splits, noMoreSplits, assignmentResult);
         return assignmentResult;
     }
@@ -475,7 +479,7 @@ class EventDrivenTaskSource
                             synchronized (listeners) {
                                 listeners.remove(listener);
                             }
-                            log.info("LISTENER REMOVE %s", listener);
+//                            log.info("LISTENER REMOVE %s", listener);
                         }
                     },
                     directExecutor());
@@ -498,7 +502,7 @@ class EventDrivenTaskSource
             }
 
             if (!futures.isEmpty()) {
-                log.info("EDT propagateIfNecessary; finalizing futures %s with %s", futures, delegate);
+//                log.info("EDT propagateIfNecessary; finalizing futures %s with %s", futures, delegate);
             }
             for (SettableFuture<T> future : futures) {
                 future.setFuture(delegate);

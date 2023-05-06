@@ -886,11 +886,11 @@ public class EventDrivenFaultTolerantQueryScheduler
                 NodeLease lease = nodeAllocator.acquire(nodeRequirements.get(), memoryRequirements.getRequiredMemory());
                 lease.getNode().addListener(
                         () -> {
-                            log.info("NODE_ACQUIRED %s", scheduledTask);
+//                            log.info("NODE_ACQUIRED %s", scheduledTask);
                             eventQueue.add(Event.WAKE_UP);
                         }, queryExecutor);
                 preSchedulingTaskContexts.put(scheduledTask, new PreSchedulingTaskContext(lease));
-                log.info("NODE_ACQUISITIONS PUT %s %s", scheduledTask, lease);
+//                log.info("NODE_ACQUISITIONS PUT %s %s", scheduledTask, lease);
                 tasksWaitingForNode++;
             }
         }
@@ -910,19 +910,19 @@ public class EventDrivenFaultTolerantQueryScheduler
                 NodeLease nodeLease = context.getNodeLease();
                 StageExecution stageExecution = getStageExecution(scheduledTask.stageId());
                 if (stageExecution.getState().isDone()) {
-                    log.info("NODE_ACQUISITIONS PROCESS %s; stage already done", scheduledTask);
+//                    log.info("NODE_ACQUISITIONS PROCESS %s; stage already done", scheduledTask);
                     iterator.remove();
                     nodeLease.release();
                 }
                 else if (nodeLease.getNode().isDone()) {
-                    log.info("NODE_ACQUISITIONS PROCESS %s; got node", scheduledTask);
+//                    log.info("NODE_ACQUISITIONS PROCESS %s; got node", scheduledTask);
                     context.setWaitingForSinkInstanceHandle(true);
                     Optional<GetExchangeSinkInstanceHandleResult> getExchangeSinkInstanceHandleResult = stageExecution.getExchangeSinkInstanceHandle(scheduledTask.partitionId());
                     if (getExchangeSinkInstanceHandleResult.isPresent()) {
-                        log.info("NODE_ACQUISITIONS PROCESS %s; getExchangeSinkInstanceHandleResult is present", scheduledTask);
+//                        log.info("NODE_ACQUISITIONS PROCESS %s; getExchangeSinkInstanceHandleResult is present", scheduledTask);
                         CompletableFuture<ExchangeSinkInstanceHandle> sinkInstanceHandleFuture = getExchangeSinkInstanceHandleResult.get().exchangeSinkInstanceHandleFuture();
                         sinkInstanceHandleFuture.whenComplete((sinkInstanceHandle, throwable) -> {
-                            log.info("NODE_ACQUISITIONS PROCESS %s; sinkInstanceHandleFuture.whenComplete; throwable=%s", scheduledTask, throwable);
+//                            log.info("NODE_ACQUISITIONS PROCESS %s; sinkInstanceHandleFuture.whenComplete; throwable=%s", scheduledTask, throwable);
                             if (throwable != null) {
                                 eventQueue.add(new StageFailureEvent(scheduledTask.stageId, throwable));
                             }
@@ -937,7 +937,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                         });
                     }
                     else {
-                        log.info("NODE_ACQUISITIONS PROCESS %s; getExchangeSinkInstanceHandleResult is empty", scheduledTask);
+//                        log.info("NODE_ACQUISITIONS PROCESS %s; getExchangeSinkInstanceHandleResult is empty", scheduledTask);
                         iterator.remove();
                         nodeLease.release();
                     }
@@ -1101,12 +1101,12 @@ public class EventDrivenFaultTolerantQueryScheduler
         @Override
         public void onSplitAssignment(SplitAssignmentEvent event)
         {
-            if (event.getAssignmentResult().noMorePartitions() ||
-                    !event.getAssignmentResult().partitionsAdded().isEmpty() ||
-                    !event.getAssignmentResult().partitionUpdates().isEmpty() ||
-                    !event.getAssignmentResult().sealedPartitions().isEmpty()) {
-                log.info("ON SPLIT ASSIGNMENT %s", event);
-            }
+//            if (event.getAssignmentResult().noMorePartitions() ||
+//                    !event.getAssignmentResult().partitionsAdded().isEmpty() ||
+//                    !event.getAssignmentResult().partitionUpdates().isEmpty() ||
+//                    !event.getAssignmentResult().sealedPartitions().isEmpty()) {
+//                log.info("ON SPLIT ASSIGNMENT %s", event);
+//            }
 
             StageExecution stageExecution = getStageExecution(event.getStageId());
             AssignmentResult assignment = event.getAssignmentResult();

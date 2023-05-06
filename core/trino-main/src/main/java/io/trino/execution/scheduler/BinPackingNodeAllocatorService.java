@@ -47,7 +47,6 @@ import javax.inject.Inject;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -207,12 +206,12 @@ public class BinPackingNodeAllocatorService
     @VisibleForTesting
     synchronized void processPendingAcquires()
     {
-        if (Instant.now().minus(15, ChronoUnit.SECONDS).isAfter(lastDebugTime)) {
-            lastDebugTime = Instant.now();
-            log.info("PENDING ACQUIRES %s", pendingAcquires);
-            log.info("FULFILLED ACQUIRES %s", fulfilledAcquires);
-            log.info("NODE POOLS %s", nodePoolMemoryInfos.get());
-        }
+//        if (Instant.now().minus(15, ChronoUnit.SECONDS).isAfter(lastDebugTime)) {
+//            lastDebugTime = Instant.now();
+//            log.info("PENDING ACQUIRES %s", pendingAcquires);
+//            log.info("FULFILLED ACQUIRES %s", fulfilledAcquires);
+//            log.info("NODE POOLS %s", nodePoolMemoryInfos.get());
+//        }
 
         // synchronized only for sake manual triggering in test code. In production code it should only be called by single thread
         Iterator<PendingAcquire> iterator = pendingAcquires.iterator();
