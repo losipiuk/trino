@@ -879,6 +879,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                     verify(result.getStatus() == OutputDataSizeEstimateStatus.FINISHED, "expected FINISHED status but got %s", result.getStatus());
                     finishedSourcesCount++;
                     sourceOutputSizeEstimates.put(sourceStageExecution.getStageId(), result.getOutputDataSizeEstimate());
+                    someSourcesMadeProgress = true;
                     continue;
                 }
 

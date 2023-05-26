@@ -77,7 +77,10 @@ public interface ExchangeManager
     /**
      * Provides information if Exchange implementation provided with this plugin supports concurrent reading and writing.
      */
-    boolean supportsConcurrentReadAndWrite();
+    default boolean supportsConcurrentReadAndWrite()
+    {
+        return true;
+    }
 
     /**
      * Shutdown the exchange manager by releasing any held resources such as
