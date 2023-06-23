@@ -854,6 +854,8 @@ public class EventDrivenFaultTolerantQueryScheduler
 
             ImmutableMap.Builder<StageId, OutputDataSizeEstimate> sourceOutputSizeEstimates = ImmutableMap.builder();
 
+            boolean someSourcesMadeProgress = false;
+
             for (SubPlan source : subPlan.getChildren()) {
                 StageExecution sourceStageExecution = stageExecutions.get(getStageId(source.getFragment().getId()));
                 if (sourceStageExecution == null) {
@@ -909,6 +911,11 @@ public class EventDrivenFaultTolerantQueryScheduler
                 }
 
                 sourceOutputSizeEstimates.put(sourceStageExecution.getStageId(), result.orElseThrow().getOutputDataSizeEstimate());
+                someSourcesMadeProgress = someSourcesMadeProgress || sourceStageExecution.isSomeProgressMade();
+            }
+
+            if (!someSourcesMadeProgress) {
+                return IsReadyForExecutionResult.notReady();
             }
 
             if (speculative) {
@@ -1901,6 +1908,11 @@ public class EventDrivenFaultTolerantQueryScheduler
                         new OutputDataSizeEstimate(ImmutableLongArray.copyOf(outputDataSize)), OutputDataSizeEstimateStatus.FINISHED));
             }
             return getEstimatedOutputDataSize().or(() -> getEstimatedSmallStageOutputDataSize(stageExecutionLookup));
+        }
+
+        public boolean isSomeProgressMade()
+        {
+            return partitions.size() > 0 && remainingPartitions.size() < partitions.size();
         }
 
         private Optional<OutputDataSizeEstimateResult> getEstimatedOutputDataSize()
