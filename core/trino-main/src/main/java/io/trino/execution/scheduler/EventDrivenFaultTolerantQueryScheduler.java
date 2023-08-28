@@ -2948,7 +2948,7 @@ public class EventDrivenFaultTolerantQueryScheduler
 
         public void setExecutionClass(TaskExecutionClass executionClass)
         {
-            checkArgument(executionClass == STANDARD || this.executionClass == SPECULATIVE, "cannot change execution class from %s to %s", this.executionClass, executionClass);
+            checkArgument(this.executionClass.canTransitionTo(executionClass), "cannot change execution class from %s to %s", this.executionClass, executionClass);
             this.executionClass = executionClass;
         }
 
