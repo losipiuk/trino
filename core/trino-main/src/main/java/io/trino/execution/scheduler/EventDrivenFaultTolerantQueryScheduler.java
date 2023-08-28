@@ -160,6 +160,8 @@ import static io.trino.execution.resourcegroups.IndexedPriorityQueue.PriorityOrd
 import static io.trino.execution.scheduler.ErrorCodes.isOutOfMemoryError;
 import static io.trino.execution.scheduler.Exchanges.getAllSourceHandles;
 import static io.trino.execution.scheduler.SchedulingUtils.canStream;
+import static io.trino.execution.scheduler.TaskExecutionClass.SPECULATIVE;
+import static io.trino.execution.scheduler.TaskExecutionClass.STANDARD;
 import static io.trino.failuredetector.FailureDetector.State.GONE;
 import static io.trino.operator.ExchangeOperator.REMOTE_CATALOG_HANDLE;
 import static io.trino.operator.RetryPolicy.TASK;
@@ -960,7 +962,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         {
             boolean nonSpeculativeTasksInQueue = schedulingQueue.getNonSpeculativeTaskCount() > 0;
             boolean nonSpeculativeTasksWaitingForNode = preSchedulingTaskContexts.values().stream()
-                    .anyMatch(task -> !task.isSpeculative() && !task.getNodeLease().getNode().isDone());
+                    .anyMatch(task -> task.getExecutionClass() == STANDARD && !task.getNodeLease().getNode().isDone());
 
             // Do not start a speculative stage if there is non-speculative work still to be done.
             // Do not start a speculative stage after partition count has been changed at runtime, as when we estimate
@@ -1222,12 +1224,12 @@ public class EventDrivenFaultTolerantQueryScheduler
         {
             long speculativeTasksWaitingForNode = preSchedulingTaskContexts.values().stream()
                     .filter(context -> !context.getNodeLease().getNode().isDone())
-                    .filter(PreSchedulingTaskContext::isSpeculative)
+                    .filter(context -> context.getExecutionClass() == SPECULATIVE)
                     .count();
 
             long nonSpeculativeTasksWaitingForNode = preSchedulingTaskContexts.values().stream()
                     .filter(context -> !context.getNodeLease().getNode().isDone())
-                    .filter(preSchedulingTaskContext -> !preSchedulingTaskContext.isSpeculative())
+                    .filter(context -> context.getExecutionClass() == STANDARD)
                     .count();
 
             while (!schedulingQueue.isEmpty()) {
@@ -1237,12 +1239,12 @@ public class EventDrivenFaultTolerantQueryScheduler
 
                 PrioritizedScheduledTask scheduledTask = schedulingQueue.peekOrThrow();
 
-                if (scheduledTask.isSpeculative() && nonSpeculativeTasksWaitingForNode > 0) {
+                if (scheduledTask.getExecutionClass() == SPECULATIVE && nonSpeculativeTasksWaitingForNode > 0) {
                     // do not handle any speculative tasks if there are non-speculative waiting
                     break;
                 }
 
-                if (scheduledTask.isSpeculative() && speculativeTasksWaitingForNode >= maxTasksWaitingForNode) {
+                if (scheduledTask.getExecutionClass() == SPECULATIVE && speculativeTasksWaitingForNode >= maxTasksWaitingForNode) {
                     // too many speculative tasks waiting for node
                     break;
                 }
@@ -1260,11 +1262,11 @@ public class EventDrivenFaultTolerantQueryScheduler
                     continue;
                 }
                 MemoryRequirements memoryRequirements = stageExecution.getMemoryRequirements(partitionId);
-                NodeLease lease = nodeAllocator.acquire(nodeRequirements.get(), memoryRequirements.getRequiredMemory(), scheduledTask.isSpeculative());
+                NodeLease lease = nodeAllocator.acquire(nodeRequirements.get(), memoryRequirements.getRequiredMemory(), scheduledTask.getExecutionClass());
                 lease.getNode().addListener(() -> eventQueue.add(Event.WAKE_UP), queryExecutor);
-                preSchedulingTaskContexts.put(scheduledTask.task(), new PreSchedulingTaskContext(lease, scheduledTask.isSpeculative()));
+                preSchedulingTaskContexts.put(scheduledTask.task(), new PreSchedulingTaskContext(lease, scheduledTask.getExecutionClass()));
 
-                if (scheduledTask.isSpeculative()) {
+                if (scheduledTask.getExecutionClass() == SPECULATIVE) {
                     speculativeTasksWaitingForNode++;
                 }
                 else {
@@ -1335,7 +1337,7 @@ public class EventDrivenFaultTolerantQueryScheduler
 
             try {
                 InternalNode node = getDone(nodeLease.getNode());
-                Optional<RemoteTask> remoteTask = stageExecution.schedule(partitionId, sinkInstanceHandle, attempt, node, context.isSpeculative());
+                Optional<RemoteTask> remoteTask = stageExecution.schedule(partitionId, sinkInstanceHandle, attempt, node, context.getExecutionClass() == SPECULATIVE);
                 remoteTask.ifPresent(task -> {
                     task.addStateChangeListener(createExchangeSinkInstanceHandleUpdateRequiredListener());
                     task.addStateChangeListener(taskStatus -> {
@@ -1487,8 +1489,8 @@ public class EventDrivenFaultTolerantQueryScheduler
                     if (context != null) {
                         // task is already waiting for node or for sink instance handle
                         // update speculative flag
-                        context.setSpeculative(prioritizedTask.isSpeculative());
-                        context.getNodeLease().setSpeculative(prioritizedTask.isSpeculative());
+                        context.setExecutionClass(prioritizedTask.getExecutionClass());
+                        context.getNodeLease().setExecutionClass(prioritizedTask.getExecutionClass());
                         return;
                     }
                     schedulingQueue.addOrUpdate(prioritizedTask);
@@ -2589,9 +2591,9 @@ public class EventDrivenFaultTolerantQueryScheduler
             return new PrioritizedScheduledTask(new ScheduledTask(stageId, partitionId), priority + SPECULATIVE_EXECUTION_PRIORITY);
         }
 
-        public boolean isSpeculative()
+        public TaskExecutionClass getExecutionClass()
         {
-            return priority >= SPECULATIVE_EXECUTION_PRIORITY;
+            return priority >= SPECULATIVE_EXECUTION_PRIORITY ? SPECULATIVE : STANDARD;
         }
 
         @Override
@@ -2621,7 +2623,7 @@ public class EventDrivenFaultTolerantQueryScheduler
             IndexedPriorityQueue.Prioritized<ScheduledTask> task = queue.pollPrioritized();
             checkState(task != null, "queue is empty");
             PrioritizedScheduledTask prioritizedTask = getPrioritizedTask(task);
-            if (!prioritizedTask.isSpeculative()) {
+            if (prioritizedTask.getExecutionClass() == STANDARD) {
                 nonSpeculativeTaskCount--;
             }
             return prioritizedTask;
@@ -2642,7 +2644,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                 previousPrioritizedTask = getPrioritizedTask(previousTask);
             }
 
-            if (!prioritizedTask.isSpeculative() && (previousPrioritizedTask == null || previousPrioritizedTask.isSpeculative())) {
+            if (prioritizedTask.getExecutionClass() == STANDARD && (previousPrioritizedTask == null || previousPrioritizedTask.getExecutionClass() == SPECULATIVE)) {
                 // number of non-speculative tasks increased
                 nonSpeculativeTaskCount++;
             }
@@ -2925,13 +2927,13 @@ public class EventDrivenFaultTolerantQueryScheduler
     private static class PreSchedulingTaskContext
     {
         private final NodeLease nodeLease;
-        private boolean speculative;
+        private TaskExecutionClass executionClass;
         private boolean waitingForSinkInstanceHandle;
 
-        public PreSchedulingTaskContext(NodeLease nodeLease, boolean speculative)
+        public PreSchedulingTaskContext(NodeLease nodeLease, TaskExecutionClass executionClass)
         {
             this.nodeLease = requireNonNull(nodeLease, "nodeLease is null");
-            this.speculative = speculative;
+            this.executionClass = requireNonNull(executionClass, "executionClass is null");
         }
 
         public NodeLease getNodeLease()
@@ -2939,15 +2941,15 @@ public class EventDrivenFaultTolerantQueryScheduler
             return nodeLease;
         }
 
-        public boolean isSpeculative()
+        public TaskExecutionClass getExecutionClass()
         {
-            return speculative;
+            return executionClass;
         }
 
-        public void setSpeculative(boolean speculative)
+        public void setExecutionClass(TaskExecutionClass executionClass)
         {
-            checkArgument(!speculative || this.speculative, "cannot change speculative flag false -> true");
-            this.speculative = speculative;
+            checkArgument(executionClass == STANDARD || this.executionClass == SPECULATIVE, "cannot change execution class from %s to %s", this.executionClass, executionClass);
+            this.executionClass = executionClass;
         }
 
         public boolean isWaitingForSinkInstanceHandle()
