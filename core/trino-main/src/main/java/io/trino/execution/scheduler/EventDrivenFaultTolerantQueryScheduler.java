@@ -1707,9 +1707,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                 partition.setTaskScheduled(true);
                 return Optional.of(PrioritizedScheduledTask.createSpeculative(stage.getStageId(), partitionId, schedulingPriority));
             }
-            else {
-                return Optional.empty();
-            }
+            return Optional.empty();
         }
 
         public Optional<PrioritizedScheduledTask> sealPartition(int partitionId)
