@@ -2604,7 +2604,7 @@ public class EventDrivenFaultTolerantQueryScheduler
         @Override
         public String toString()
         {
-            return "" + task.stageId() + "/" + task.partitionId() + "[" + priority + "]";
+            return task.stageId() + "/" + task.partitionId() + "[" + priority + "]";
         }
     }
 
