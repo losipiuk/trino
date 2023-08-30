@@ -527,8 +527,6 @@ public class EventDrivenFaultTolerantQueryScheduler
         private final PartitionMemoryEstimatorFactory memoryEstimatorFactory;
         private final FaultTolerantPartitioningSchemeFactory partitioningSchemeFactory;
         private final ExchangeManager exchangeManager;
-        private final DataSize smallSizePartitionSizeEstimate;
-        private final boolean smallStageRequireNoMorePartitions;
         private final int maxTaskExecutionAttempts;
         private final int maxTasksWaitingForNode;
         private final int maxTasksWaitingForExecution;
@@ -545,6 +543,8 @@ public class EventDrivenFaultTolerantQueryScheduler
         private final boolean smallStageEstimationEnabled;
         private final DataSize smallStageEstimationThreshold;
         private final double smallStageSourceSizeMultiplier;
+        private final DataSize smallSizePartitionSizeEstimate;
+        private final boolean smallStageRequireNoMorePartitions;
 
         private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>();
         private final List<Event> eventBuffer = new ArrayList<>(EVENT_BUFFER_CAPACITY);
