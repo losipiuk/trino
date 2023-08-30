@@ -125,6 +125,6 @@ public class FileSystemExchangeManager
     @Override
     public boolean supportsConcurrentReadAndWrite()
     {
-        return false;
+        return true;
     }
 }

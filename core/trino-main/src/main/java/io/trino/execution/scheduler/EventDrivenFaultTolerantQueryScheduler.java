@@ -981,7 +981,10 @@ public class EventDrivenFaultTolerantQueryScheduler
             boolean standardTasksWaitingForNode = preSchedulingTaskContexts.values().stream()
                     .anyMatch(task -> task.getExecutionClass() == STANDARD && !task.getNodeLease().getNode().isDone());
 
+            log.debug("isReadyForExecution; subPlan=" + subPlan.getFragment().getId() + "; root=" + subPlan.getFragment().getRoot());
             boolean eager = stageEstimationForEagerParentEnabled && shouldScheduleEagerly(subPlan);
+            log.debug("stageEstimationForEagerParentEnabled=" + stageEstimationForEagerParentEnabled);
+            log.debug("eager=" + eager);
             boolean speculative = false;
             int finishedSourcesCount = 0;
             int estimatedByProgressSourcesCount = 0;
@@ -1009,11 +1012,13 @@ public class EventDrivenFaultTolerantQueryScheduler
                         // by progress, repartition tasks will produce very uneven output for different output partitions, which
                         // will result in very bad task bin-packing results; also the fact that runtime adaptive partitioning
                         // happened already suggests that there is plenty work ahead.
+                        log.debug("X1");
                         return IsReadyForExecutionResult.notReady();
                     }
 
                     if ((standardTasksInQueue || standardTasksWaitingForNode) && !eager) {
                         // Do not start a non-eager speculative stage if there is non-speculative work still to be done.
+                        log.debug("X2");
                         return IsReadyForExecutionResult.notReady();
                     }
 
@@ -1031,16 +1036,19 @@ public class EventDrivenFaultTolerantQueryScheduler
 
                 if (!canOutputDataEarly(source)) {
                     // no point in starting stage if source stage needs to complete before we can get any input data to make progress
+                    log.debug("X3");
                     return IsReadyForExecutionResult.notReady();
                 }
 
                 if (!canStream(subPlan, source)) {
                     // only allow speculative execution of stage if all source stages for which we cannot stream data are finished
+                    log.debug("X4");
                     return IsReadyForExecutionResult.notReady();
                 }
 
                 Optional<OutputDataSizeEstimateResult> result = sourceStageExecution.getOutputDataSize(stageExecutions::get, eager);
                 if (result.isEmpty()) {
+                    log.debug("X5");
                     return IsReadyForExecutionResult.notReady();
                 }
 
@@ -1056,6 +1064,7 @@ public class EventDrivenFaultTolerantQueryScheduler
             }
 
             if (!subPlan.getChildren().isEmpty() && !someSourcesMadeProgress && !eager) {
+                log.debug("X6");
                 return IsReadyForExecutionResult.notReady();
             }
 
