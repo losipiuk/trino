@@ -2669,7 +2669,6 @@ public class EventDrivenFaultTolerantQueryScheduler
     {
         private PrioritizedScheduledTask
         {
-            log.warn(new RuntimeException(), "NEW PST task=" + task  + "; ec=" + executionClass + "; prio=" + priority);
             requireNonNull(task, "task is null");
             requireNonNull(executionClass, "executionClass is null");
             checkArgument(priority >= 0, "priority must be greater than or equal to zero: %s", priority);
