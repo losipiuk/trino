@@ -1282,12 +1282,12 @@ public class EventDrivenFaultTolerantQueryScheduler
             long eagerSpeculativeTasksWaitingForNode = getWaitingForNodeTasksCount(EAGER_SPECULATIVE);
 
             log.debug("SCHEDULE TASKS; standard_count=%s, speculative_count=%s, eager_speculative_count=%s, standard_waiting_for_node=%s, speculative_waiting_for_node=%s, eager_speculative_waiting_for_node=%s",
-                    schedulingQueue.getTaskCount(EAGER_SPECULATIVE),
                     schedulingQueue.getTaskCount(STANDARD),
                     schedulingQueue.getTaskCount(SPECULATIVE),
+                    schedulingQueue.getTaskCount(EAGER_SPECULATIVE),
                     standardTasksWaitingForNode,
                     speculativeTasksWaitingForNode,
-                    prioritySpeculativeTasksWaitingForNode);
+                    eagerSpeculativeTasksWaitingForNode);
 
             while (!schedulingQueue.isEmpty()) {
                 PrioritizedScheduledTask scheduledTask;
@@ -1318,6 +1318,8 @@ public class EventDrivenFaultTolerantQueryScheduler
                     // cannot schedule anything more right now
                     break;
                 }
+
+                log.debug("PICKED FOR SCHEDULING " + scheduledTask);
 
                 StageExecution stageExecution = getStageExecution(scheduledTask.task().stageId());
                 if (stageExecution.getState().isDone()) {
