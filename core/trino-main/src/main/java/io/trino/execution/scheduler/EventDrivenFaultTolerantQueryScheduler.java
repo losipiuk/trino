@@ -1281,6 +1281,14 @@ public class EventDrivenFaultTolerantQueryScheduler
             long speculativeTasksWaitingForNode = getWaitingForNodeTasksCount(SPECULATIVE);
             long eagerSpeculativeTasksWaitingForNode = getWaitingForNodeTasksCount(EAGER_SPECULATIVE);
 
+            log.debug("SCHEDULE TASKS; standard_count=%s, speculative_count=%s, eager_speculative_count=%s, standard_waiting_for_node=%s, speculative_waiting_for_node=%s, eager_speculative_waiting_for_node=%s",
+                    schedulingQueue.getTaskCount(EAGER_SPECULATIVE),
+                    schedulingQueue.getTaskCount(STANDARD),
+                    schedulingQueue.getTaskCount(SPECULATIVE),
+                    standardTasksWaitingForNode,
+                    speculativeTasksWaitingForNode,
+                    prioritySpeculativeTasksWaitingForNode);
+
             while (!schedulingQueue.isEmpty()) {
                 PrioritizedScheduledTask scheduledTask;
 
@@ -1549,7 +1557,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                         partitionUpdate.readyForScheduling(),
                         partitionUpdate.splits(),
                         partitionUpdate.noMoreSplits());
-                scheduledTask.ifPresent(task -> log.debug("UPDATING TASKS " + task));
+                scheduledTask.ifPresent(task -> log.debug("UPDATING TASKS " + task + "; splits count=" + partitionUpdate.splits().size() + "; noMoreSplits=" + partitionUpdate.noMoreSplits() + "; readyForScheduling=" + partitionUpdate.readyForScheduling()));
                 scheduledTask.ifPresent(schedulingQueue::addOrUpdate);
             }
             assignment.sealedPartitions().forEach(partitionId -> {
@@ -1563,6 +1571,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                         context.getNodeLease().setExecutionClass(prioritizedTask.getExecutionClass());
                         return;
                     }
+                    log.debug("SEALING TASK " + prioritizedTask.task());
                     schedulingQueue.addOrUpdate(prioritizedTask);
                 });
             });
