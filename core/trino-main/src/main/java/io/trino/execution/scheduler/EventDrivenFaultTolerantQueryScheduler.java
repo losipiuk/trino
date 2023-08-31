@@ -1461,6 +1461,7 @@ public class EventDrivenFaultTolerantQueryScheduler
             boolean schedulingQueueIsFull = schedulingQueue.getTaskCount(STANDARD) >= maxTasksWaitingForExecution;
             for (StageExecution stageExecution : stageExecutions.values()) {
                 if (!schedulingQueueIsFull || stageExecution.hasOpenTaskRunning() || stageExecution.isEager()) {
+                    log.debug("LOADING tasks descriptors from stage " + stageExecution.getStageId());
                     stageExecution.loadMoreTaskDescriptors().ifPresent(future -> Futures.addCallback(future, new FutureCallback<>()
                     {
                         @Override
@@ -1548,6 +1549,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                         partitionUpdate.readyForScheduling(),
                         partitionUpdate.splits(),
                         partitionUpdate.noMoreSplits());
+                scheduledTask.ifPresent(task -> log.debug("UPDATING TASKS " + task));
                 scheduledTask.ifPresent(schedulingQueue::addOrUpdate);
             }
             assignment.sealedPartitions().forEach(partitionId -> {
