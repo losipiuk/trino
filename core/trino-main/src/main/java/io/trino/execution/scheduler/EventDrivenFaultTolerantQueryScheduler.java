@@ -1461,7 +1461,7 @@ public class EventDrivenFaultTolerantQueryScheduler
             boolean schedulingQueueIsFull = schedulingQueue.getTaskCount(STANDARD) >= maxTasksWaitingForExecution;
             for (StageExecution stageExecution : stageExecutions.values()) {
                 if (!schedulingQueueIsFull || stageExecution.hasOpenTaskRunning() || stageExecution.isEager()) {
-                    log.debug("LOADING tasks descriptors from stage " + stageExecution.getStageId());
+                    log.debug("LOADING tasks descriptors from stage " + stageExecution.getStageId() + ";eager=" + stageExecution.isEager());
                     stageExecution.loadMoreTaskDescriptors().ifPresent(future -> Futures.addCallback(future, new FutureCallback<>()
                     {
                         @Override
@@ -2669,6 +2669,7 @@ public class EventDrivenFaultTolerantQueryScheduler
     {
         private PrioritizedScheduledTask
         {
+            log.warn(new RuntimeException(), "NEW PST task=" + task  + "; ec=" + executionClass + "; prio=" + priority);
             requireNonNull(task, "task is null");
             requireNonNull(executionClass, "executionClass is null");
             checkArgument(priority >= 0, "priority must be greater than or equal to zero: %s", priority);
