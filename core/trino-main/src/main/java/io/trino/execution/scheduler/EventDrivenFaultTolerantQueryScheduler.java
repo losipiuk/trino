@@ -173,6 +173,7 @@ import static io.trino.spi.ErrorType.INTERNAL_ERROR;
 import static io.trino.spi.ErrorType.USER_ERROR;
 import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static io.trino.spi.StandardErrorCode.REMOTE_HOST_GONE;
+import static io.trino.spi.exchange.Exchange.SourceHandlesDeliveryMode.EAGER;
 import static io.trino.sql.planner.RuntimeAdaptivePartitioningRewriter.consumesHashPartitionedInput;
 import static io.trino.sql.planner.RuntimeAdaptivePartitioningRewriter.getMaxPlanFragmentId;
 import static io.trino.sql.planner.RuntimeAdaptivePartitioningRewriter.getMaxPlanId;
@@ -1143,13 +1144,13 @@ public class EventDrivenFaultTolerantQueryScheduler
                 stageRegistry.add(stage);
                 stage.addFinalStageInfoListener(status -> queryStateMachine.updateQueryInfo(Optional.ofNullable(stageRegistry.getStageInfo())));
 
-                ImmutableMap.Builder<PlanFragmentId, Exchange> sourceExchanges = ImmutableMap.builder();
+                ImmutableMap.Builder<PlanFragmentId, Exchange> sourceExchangesBuilder = ImmutableMap.builder();
                 Map<PlanFragmentId, OutputDataSizeEstimate> sourceOutputEstimatesByFragmentId = new HashMap<>();
                 for (SubPlan source : subPlan.getChildren()) {
                     PlanFragmentId sourceFragmentId = source.getFragment().getId();
                     StageId sourceStageId = getStageId(sourceFragmentId);
                     StageExecution sourceStageExecution = getStageExecution(sourceStageId);
-                    sourceExchanges.put(sourceFragmentId, sourceStageExecution.getExchange());
+                    sourceExchangesBuilder.put(sourceFragmentId, sourceStageExecution.getExchange());
                     OutputDataSizeEstimate outputDataSizeResult = sourceOutputSizeEstimates.get(sourceStageId);
                     verify(outputDataSizeResult != null, "No output data size estimate in %s map for stage %s", sourceOutputSizeEstimates, sourceStageId);
                     sourceOutputEstimatesByFragmentId.put(sourceFragmentId, outputDataSizeResult);
@@ -1168,11 +1169,12 @@ public class EventDrivenFaultTolerantQueryScheduler
                     outputDataSizeEstimates.put(remoteSource.getId(), OutputDataSizeEstimate.merge(estimates));
                 }
 
+                Map<PlanFragmentId, Exchange> sourceExchanges = sourceExchangesBuilder.buildOrThrow();
                 EventDrivenTaskSource taskSource = closer.register(taskSourceFactory.create(
                         session,
                         stage.getStageSpan(),
                         fragment,
-                        sourceExchanges.buildOrThrow(),
+                        sourceExchanges,
                         partitioningSchemeFactory.get(fragment.getPartitioning(), fragment.getPartitionCount()),
                         stage::recordGetSplitTime,
                         outputDataSizeEstimates.buildOrThrow()));
@@ -1191,6 +1193,9 @@ public class EventDrivenFaultTolerantQueryScheduler
                 boolean coordinatorStage = stage.getFragment().getPartitioning().equals(COORDINATOR_DISTRIBUTION);
 
                 boolean noMemoryFragment = isNoMemoryFragment(fragment);
+                if (eager) {
+                    sourceExchanges.values().forEach(sourceExchange -> sourceExchange.setSourceHandlesDeliveryMode(EAGER));
+                }
                 StageExecution execution = new StageExecution(
                         queryStateMachine,
                         taskDescriptorStorage,
