@@ -1222,7 +1222,7 @@ public class EventDrivenFaultTolerantQueryScheduler
 
         private void scheduleTasks()
         {
-            long nonSpeculativeTasksWaitingForNode = preSchedulingTaskContexts.values().stream()
+            long standardTasksWaitingForNode = preSchedulingTaskContexts.values().stream()
                     .filter(context -> !context.getNodeLease().getNode().isDone())
                     .filter(context -> context.getExecutionClass() == STANDARD)
                     .count();
@@ -1233,13 +1233,13 @@ public class EventDrivenFaultTolerantQueryScheduler
                     .count();
 
             while (!schedulingQueue.isEmpty()) {
-                if (nonSpeculativeTasksWaitingForNode >= maxTasksWaitingForNode) {
+                if (standardTasksWaitingForNode >= maxTasksWaitingForNode) {
                     break;
                 }
 
                 PrioritizedScheduledTask scheduledTask = schedulingQueue.peekOrThrow();
 
-                if (scheduledTask.getExecutionClass() == SPECULATIVE && nonSpeculativeTasksWaitingForNode > 0) {
+                if (scheduledTask.getExecutionClass() == SPECULATIVE && standardTasksWaitingForNode > 0) {
                     // do not handle any speculative tasks if there are non-speculative waiting
                     break;
                 }
@@ -1270,7 +1270,7 @@ public class EventDrivenFaultTolerantQueryScheduler
                     speculativeTasksWaitingForNode++;
                 }
                 else {
-                    nonSpeculativeTasksWaitingForNode++;
+                    standardTasksWaitingForNode++;
                 }
             }
         }
