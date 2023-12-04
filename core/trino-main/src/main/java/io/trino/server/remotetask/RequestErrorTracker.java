@@ -134,6 +134,7 @@ class RequestErrorTracker
             errorsSinceLastSuccess.forEach(exception::addSuppressed);
             throw exception;
         }
+        log.info("REQUEST ERROR TRACKER " + jobDescription + " " + taskId + " " + backoff.getFailureCount() + " " + backoff.getFailureDuration().convertTo(SECONDS) + " " + errorsSinceLastSuccess);
     }
 
     @SuppressWarnings("FormatStringAnnotation") // we manipulate the format string and there's no way to make Error Prone accept the result

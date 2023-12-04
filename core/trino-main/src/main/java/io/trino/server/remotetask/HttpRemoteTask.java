@@ -959,7 +959,7 @@ public final class HttpRemoteTask
                 try {
                     log.info("SUCC CLEANUP SET TASK INFO [1] " + result.getValue().getTaskStatus().getTaskId() + ", " + result.getValue().getTaskStatus().getState() + ", " + getTaskInfo().getTaskStatus().getState() + ", " + action);
                     updateTaskInfo(result.getValue());
-                    log.info("SUCC CLEANUP SET TASK INFO [2]" + result.getValue().getTaskStatus().getTaskId() + ", " + getTaskInfo().getTaskStatus().getState());
+                    // log.info("SUCC CLEANUP SET TASK INFO [2]" + result.getValue().getTaskStatus().getTaskId() + ", " + getTaskInfo().getTaskStatus().getState());
                 }
                 finally {
                     // if cleanup operation has not at least started task termination, mark the task failed
@@ -1045,6 +1045,7 @@ public final class HttpRemoteTask
     {
         try (SetThreadName ignored = new SetThreadName("HttpRemoteTask-%s", taskId)) {
             TaskStatus taskStatus = getTaskStatus();
+            log.info("fatalUnacknowledgedFailure " + taskId + " " + taskStatus.getState());
             if (!taskStatus.getState().isDone()) {
                 // Update the taskInfo with the new taskStatus.
 
