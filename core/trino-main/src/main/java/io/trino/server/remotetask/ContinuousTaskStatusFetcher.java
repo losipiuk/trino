@@ -116,7 +116,6 @@ class ContinuousTaskStatusFetcher
 
     public synchronized void stop()
     {
-        log.warn(new RuntimeException(), "STOPPING CTSF " + taskId);
         running = false;
         if (future != null) {
             future.cancel(true);

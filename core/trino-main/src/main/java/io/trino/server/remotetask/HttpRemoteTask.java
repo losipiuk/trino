@@ -871,6 +871,7 @@ public final class HttpRemoteTask
         // only when termination is complete do we shut down status fetching
         if (taskState.isDone()) {
             // stop continuously fetching task status
+            log.warn(new RuntimeException(), "XSTOPPING CTSF " + taskId + "," + taskState);
             taskStatusFetcher.stop();
             // cancel pending request
             Future<?> request = currentRequest.getAndSet(null);
@@ -918,10 +919,12 @@ public final class HttpRemoteTask
         // Only allow a single final cleanup request once the task status sees a final state
         TaskState taskStatusState = getTaskStatus().getState();
         if (taskStatusState.isDone() && !cleanedUp.compareAndSet(false, true)) {
+            log.info("ALREADY CLEANED UP " + taskId + "," + taskStatusState);
             return;
         }
 
         Request request = remoteRequestSupplier.get();
+        log.info("SCHEDULE CLEANUP " + taskId + ", " + request.getUri() + ", " + action);
         doScheduleAsyncCleanupRequest(new Backoff(maxErrorDuration), request, action);
     }
 
@@ -954,12 +957,14 @@ public final class HttpRemoteTask
             public void onSuccess(JsonResponse<TaskInfo> result)
             {
                 try {
+                    log.info("CLEANUP SET TASK INFO " + result.getValue().getTaskStatus().getTaskId() + ", " + getTaskInfo().getTaskStatus().getState() + ", " + action);
                     updateTaskInfo(result.getValue());
                 }
                 finally {
                     // if cleanup operation has not at least started task termination, mark the task failed
                     TaskState taskState = getTaskInfo().getTaskStatus().getState();
                     if (!taskState.isTerminatingOrDone()) {
+                        log.info("CALLING FATAL ASYNC CLEANUP FAILURE " + result.getValue().getTaskStatus().getTaskId());
                         fatalAsyncCleanupFailure(new TrinoTransportException(REMOTE_TASK_ERROR, fromUri(request.getUri()), format("Unable to %s task at %s, last known state was: %s", action, request.getUri(), taskState)));
                     }
                 }
@@ -1004,6 +1009,7 @@ public final class HttpRemoteTask
                 synchronized (HttpRemoteTask.this) {
                     try (SetThreadName ignored = new SetThreadName("HttpRemoteTask-%s", taskId)) {
                         TaskStatus taskStatus = getTaskStatus();
+                        log.info("FATAL ASYNC CLEANUP FAILURE [1] " + taskStatus.getTaskId() + ", " + taskStatus.getState());
                         if (taskStatus.getState().isDone()) {
                             log.warn("Task %s already in terminal state %s; cannot overwrite with FAILED due to %s",
                                     taskStatus.getTaskId(),
@@ -1017,6 +1023,7 @@ public final class HttpRemoteTask
                                     .build();
                             taskStatus = failWith(taskStatus, FAILED, failures);
                         }
+                        log.info("FATAL ASYNC CLEANUP FAILURE [2] " + taskStatus.getTaskId() + ", " + taskStatus.getState());
                         updateTaskInfo(getTaskInfo().withTaskStatus(taskStatus));
                     }
                 }
