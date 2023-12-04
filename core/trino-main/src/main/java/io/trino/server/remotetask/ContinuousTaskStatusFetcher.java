@@ -116,6 +116,7 @@ class ContinuousTaskStatusFetcher
 
     public synchronized void stop()
     {
+        log.warn(new RuntimeException(), "STOPPING CTSF " + taskId);
         running = false;
         if (future != null) {
             future.cancel(true);
@@ -125,37 +126,44 @@ class ContinuousTaskStatusFetcher
 
     private synchronized void scheduleNextRequest()
     {
-        // stopped or done?
-        TaskStatus taskStatus = getTaskStatus();
-        if (!running || taskStatus.getState().isDone()) {
-            return;
+        try {
+            // stopped or done?
+            TaskStatus taskStatus = getTaskStatus();
+            if (!running || taskStatus.getState().isDone()) {
+                log.warn("SCHEDULE [1] " + taskId + ", " + running + ", " + taskStatus.getState());
+                return;
+            }
+
+            // outstanding request?
+            if (future != null && !future.isDone()) {
+                // this should never happen
+                log.error("Cannot reschedule update because an update is already running");
+                return;
+            }
+
+            // if throttled due to error, asynchronously wait for timeout and try again
+            ListenableFuture<Void> errorRateLimit = errorTracker.acquireRequestPermit();
+            if (!errorRateLimit.isDone()) {
+                errorRateLimit.addListener(this::scheduleNextRequest, executor);
+                log.warn("SCHEDULE [2] " + taskId + ", " + running + ", " + taskStatus.getState() + ", " + errorRateLimit);
+                return;
+            }
+
+            Request request = prepareGet()
+                    .setUri(uriBuilderFrom(taskStatus.getSelf()).appendPath("status").build())
+                    .setHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                    .setHeader(TRINO_CURRENT_VERSION, Long.toString(taskStatus.getVersion()))
+                    .setHeader(TRINO_MAX_WAIT, refreshMaxWait.toString())
+                    .setSpanBuilder(spanBuilderFactory.get())
+                    .build();
+
+            errorTracker.startRequest();
+            future = httpClient.executeAsync(request, createFullJsonResponseHandler(taskStatusCodec));
+            Futures.addCallback(future, new SimpleHttpResponseHandler<>(new TaskStatusResponseCallback(), request.getUri(), stats), executor);
         }
-
-        // outstanding request?
-        if (future != null && !future.isDone()) {
-            // this should never happen
-            log.error("Cannot reschedule update because an update is already running");
-            return;
+        catch (Throwable e) {
+            log.error(e, "ERROR FROM SCHEDULE " + taskId);
         }
-
-        // if throttled due to error, asynchronously wait for timeout and try again
-        ListenableFuture<Void> errorRateLimit = errorTracker.acquireRequestPermit();
-        if (!errorRateLimit.isDone()) {
-            errorRateLimit.addListener(this::scheduleNextRequest, executor);
-            return;
-        }
-
-        Request request = prepareGet()
-                .setUri(uriBuilderFrom(taskStatus.getSelf()).appendPath("status").build())
-                .setHeader(CONTENT_TYPE, JSON_UTF_8.toString())
-                .setHeader(TRINO_CURRENT_VERSION, Long.toString(taskStatus.getVersion()))
-                .setHeader(TRINO_MAX_WAIT, refreshMaxWait.toString())
-                .setSpanBuilder(spanBuilderFactory.get())
-                .build();
-
-        errorTracker.startRequest();
-        future = httpClient.executeAsync(request, createFullJsonResponseHandler(taskStatusCodec));
-        Futures.addCallback(future, new SimpleHttpResponseHandler<>(new TaskStatusResponseCallback(), request.getUri(), stats), executor);
     }
 
     TaskStatus getTaskStatus()
