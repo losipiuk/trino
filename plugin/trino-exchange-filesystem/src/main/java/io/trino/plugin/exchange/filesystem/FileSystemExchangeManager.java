@@ -15,6 +15,8 @@ package io.trino.plugin.exchange.filesystem;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
 import io.trino.spi.TrinoException;
 import io.trino.spi.exchange.Exchange;
 import io.trino.spi.exchange.ExchangeContext;
@@ -41,6 +43,8 @@ public class FileSystemExchangeManager
 
     private final FileSystemExchangeStorage exchangeStorage;
     private final FileSystemExchangeStats stats;
+    private final OpenTelemetry openTelemetry;
+    private final Tracer tracer;
     private final List<URI> baseDirectories;
     private final int maxPageStorageSizeInBytes;
     private final int exchangeSinkBufferPoolMinSize;
@@ -57,12 +61,16 @@ public class FileSystemExchangeManager
     public FileSystemExchangeManager(
             FileSystemExchangeStorage exchangeStorage,
             FileSystemExchangeStats stats,
-            FileSystemExchangeConfig fileSystemExchangeConfig)
+            FileSystemExchangeConfig fileSystemExchangeConfig,
+            OpenTelemetry openTelemetry,
+            Tracer tracer)
     {
         this.exchangeStorage = requireNonNull(exchangeStorage, "exchangeStorage is null");
         this.stats = requireNonNull(stats, "stats is null");
         this.baseDirectories = ImmutableList.copyOf(requireNonNull(fileSystemExchangeConfig.getBaseDirectories(), "baseDirectories is null"));
         this.maxPageStorageSizeInBytes = toIntExact(fileSystemExchangeConfig.getMaxPageStorageSize().toBytes());
+        this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
+        this.tracer = requireNonNull(tracer, "tracer is null");
         this.exchangeSinkBufferPoolMinSize = fileSystemExchangeConfig.getExchangeSinkBufferPoolMinSize();
         this.exchangeSinkBuffersPerPartition = fileSystemExchangeConfig.getExchangeSinkBuffersPerPartition();
         this.exchangeSinkMaxFileSizeInBytes = fileSystemExchangeConfig.getExchangeSinkMaxFileSize().toBytes();
@@ -87,6 +95,7 @@ public class FileSystemExchangeManager
                 baseDirectories,
                 exchangeStorage,
                 stats,
+                tracer,
                 context,
                 outputPartitionCount,
                 preserveOrderWithinPartition,

@@ -103,7 +103,7 @@ public class StageStateMachine
             Map<PlanNodeId, TableInfo> tables,
             Executor executor,
             Tracer tracer,
-            Span querySpan,
+            Span schedulerSpan,
             SplitSchedulerStats schedulerStats)
     {
         this.stageId = requireNonNull(stageId, "stageId is null");
@@ -117,7 +117,7 @@ public class StageStateMachine
         finalStageInfo = new StateMachine<>("final stage " + stageId, executor, Optional.empty());
 
         stageSpan = tracer.spanBuilder("stage")
-                .setParent(Context.current().with(querySpan))
+                .setParent(Context.current().with(schedulerSpan))
                 .setAttribute(TrinoAttributes.QUERY_ID, stageId.getQueryId().toString())
                 .setAttribute(TrinoAttributes.STAGE_ID, stageId.toString())
                 .startSpan();

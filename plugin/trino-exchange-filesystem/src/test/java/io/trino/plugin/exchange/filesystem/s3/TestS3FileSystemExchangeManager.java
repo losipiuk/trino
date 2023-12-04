@@ -17,6 +17,7 @@ import io.trino.plugin.exchange.filesystem.AbstractTestExchangeManager;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangeManagerFactory;
 import io.trino.plugin.exchange.filesystem.containers.MinioStorage;
 import io.trino.spi.exchange.ExchangeManager;
+import io.trino.spi.exchange.ExchangeManagerContext;
 import org.junit.jupiter.api.AfterAll;
 
 import static io.trino.plugin.exchange.filesystem.containers.MinioStorage.getExchangeManagerProperties;
@@ -33,7 +34,7 @@ public class TestS3FileSystemExchangeManager
         this.minioStorage = new MinioStorage("test-exchange-spooling-" + randomUUID());
         minioStorage.start();
 
-        return new FileSystemExchangeManagerFactory().create(getExchangeManagerProperties(minioStorage));
+        return new FileSystemExchangeManagerFactory().create(getExchangeManagerProperties(minioStorage), new ExchangeManagerContext() {});
     }
 
     @Override

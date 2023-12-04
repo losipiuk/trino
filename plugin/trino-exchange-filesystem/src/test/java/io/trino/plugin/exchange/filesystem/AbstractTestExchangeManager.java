@@ -21,6 +21,7 @@ import com.google.common.collect.Multimap;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import io.airlift.units.DataSize;
+import io.opentelemetry.api.trace.Span;
 import io.trino.spi.QueryId;
 import io.trino.spi.exchange.Exchange;
 import io.trino.spi.exchange.ExchangeContext;
@@ -88,7 +89,7 @@ public abstract class AbstractTestExchangeManager
             throws Exception
     {
         ExchangeId exchangeId = createRandomExchangeId();
-        Exchange exchange = exchangeManager.createExchange(new ExchangeContext(new QueryId("query"), exchangeId), 2, false);
+        Exchange exchange = exchangeManager.createExchange(new ExchangeContext(new QueryId("query"), exchangeId, Span.getInvalid()), 2, false);
         ExchangeSinkHandle sinkHandle0 = exchange.addSink(0);
         ExchangeSinkHandle sinkHandle1 = exchange.addSink(1);
         ExchangeSinkHandle sinkHandle2 = exchange.addSink(2);
@@ -196,7 +197,7 @@ public abstract class AbstractTestExchangeManager
         String maxPage = "d".repeat(toIntExact(DataSize.of(16, MEGABYTE).toBytes()) - Integer.BYTES);
 
         ExchangeId exchangeId = createRandomExchangeId();
-        Exchange exchange = exchangeManager.createExchange(new ExchangeContext(new QueryId("query"), exchangeId), 3, false);
+        Exchange exchange = exchangeManager.createExchange(new ExchangeContext(new QueryId("query"), exchangeId, Span.getInvalid()), 3, false);
         ExchangeSinkHandle sinkHandle0 = exchange.addSink(0);
         ExchangeSinkHandle sinkHandle1 = exchange.addSink(1);
         ExchangeSinkHandle sinkHandle2 = exchange.addSink(2);
@@ -267,7 +268,7 @@ public abstract class AbstractTestExchangeManager
     @Test
     public void testMaxOutputPartitionCountCheck()
     {
-        assertThatThrownBy(() -> exchangeManager.createExchange(new ExchangeContext(new QueryId("query"), createRandomExchangeId()), 51, false))
+        assertThatThrownBy(() -> exchangeManager.createExchange(new ExchangeContext(new QueryId("query"), createRandomExchangeId(), Span.getInvalid()), 51, false))
                 .hasMessageContaining("Max number of output partitions exceeded for exchange")
                 .hasFieldOrPropertyWithValue("errorCode", MAX_OUTPUT_PARTITION_COUNT_EXCEEDED.toErrorCode());
     }

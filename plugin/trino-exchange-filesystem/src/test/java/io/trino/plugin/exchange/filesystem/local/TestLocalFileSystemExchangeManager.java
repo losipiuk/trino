@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.exchange.filesystem.AbstractTestExchangeManager;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangeManagerFactory;
 import io.trino.spi.exchange.ExchangeManager;
+import io.trino.spi.exchange.ExchangeManagerContext;
 
 public class TestLocalFileSystemExchangeManager
         extends AbstractTestExchangeManager
@@ -27,9 +28,10 @@ public class TestLocalFileSystemExchangeManager
         String baseDirectory1 = System.getProperty("java.io.tmpdir") + "/trino-local-file-system-exchange-manager-1";
         String baseDirectory2 = System.getProperty("java.io.tmpdir") + "/trino-local-file-system-exchange-manager-2";
         return new FileSystemExchangeManagerFactory().create(ImmutableMap.of(
-                "exchange.base-directories", baseDirectory1 + "," + baseDirectory2,
-                // to trigger file split in some tests
-                "exchange.sink-max-file-size", "16MB",
-                "exchange.source-handle-target-data-size", "1MB"));
+                        "exchange.base-directories", baseDirectory1 + "," + baseDirectory2,
+                        // to trigger file split in some tests
+                        "exchange.sink-max-file-size", "16MB",
+                        "exchange.source-handle-target-data-size", "1MB"),
+                new ExchangeManagerContext() {});
     }
 }

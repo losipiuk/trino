@@ -96,6 +96,7 @@ public class ExchangeOperator
                 TaskId taskId = taskContext.getTaskId();
                 exchangeDataSource = new LazyExchangeDataSource(
                         taskId.getQueryId(),
+                        taskContext.getSession().getQuerySpan(),
                         new ExchangeId(format("direct-exchange-%s-%s", taskId.getStageId().getId(), sourceId)),
                         directExchangeClientSupplier,
                         memoryContext,
