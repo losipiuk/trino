@@ -957,8 +957,9 @@ public final class HttpRemoteTask
             public void onSuccess(JsonResponse<TaskInfo> result)
             {
                 try {
-                    log.info("CLEANUP SET TASK INFO " + result.getValue().getTaskStatus().getTaskId() + ", " + getTaskInfo().getTaskStatus().getState() + ", " + action);
+                    log.info("SUCC CLEANUP SET TASK INFO [1] " + result.getValue().getTaskStatus().getTaskId() + ", " + result.getValue().getTaskStatus().getState() + ", " + getTaskInfo().getTaskStatus().getState() + ", " + action);
                     updateTaskInfo(result.getValue());
+                    log.info("SUCC CLEANUP SET TASK INFO [2]" + result.getValue().getTaskStatus().getTaskId() + ", " + getTaskInfo().getTaskStatus().getState());
                 }
                 finally {
                     // if cleanup operation has not at least started task termination, mark the task failed
@@ -974,12 +975,15 @@ public final class HttpRemoteTask
             @SuppressWarnings("FormatStringAnnotation") // we manipulate the format string and there's no way to make Error Prone accept the result
             public void onFailure(Throwable t)
             {
+                log.info("FAIL CLEANUP SET TASK INFO " + taskId);
                 // final task info has been received, no need to resend the request
                 if (getTaskInfo().getTaskStatus().getState().isDone()) {
+                    log.info("RET [1] FAIL CLEANUP SET TASK INFO " + taskId);
                     return;
                 }
 
                 if (t instanceof RejectedExecutionException && httpClient.isClosed()) {
+                    log.info("RET [2] FAIL CLEANUP SET TASK INFO " + taskId);
                     String message = format("Unable to %s task at %s. HTTP client is closed.", action, request.getUri());
                     logError(t, message);
                     fatalAsyncCleanupFailure(new TrinoTransportException(REMOTE_TASK_ERROR, fromUri(request.getUri()), message));
@@ -988,6 +992,7 @@ public final class HttpRemoteTask
 
                 // record failure
                 if (cleanupBackoff.failure()) {
+                    log.info("RET [3] FAIL CLEANUP SET TASK INFO " + taskId);
                     String message = format("Unable to %s task at %s. Back off depleted.", action, request.getUri());
                     logError(t, message);
                     fatalAsyncCleanupFailure(new TrinoTransportException(REMOTE_TASK_ERROR, fromUri(request.getUri()), message));
@@ -997,9 +1002,11 @@ public final class HttpRemoteTask
                 // reschedule
                 long delayNanos = cleanupBackoff.getBackoffDelayNanos();
                 if (delayNanos == 0) {
+                    log.info("RET [4] FAIL CLEANUP SET TASK INFO " + taskId);
                     doScheduleAsyncCleanupRequest(cleanupBackoff, request, action);
                 }
                 else {
+                    log.info("RET [5] FAIL CLEANUP SET TASK INFO " + taskId);
                     errorScheduledExecutor.schedule(() -> doScheduleAsyncCleanupRequest(cleanupBackoff, request, action), delayNanos, NANOSECONDS);
                 }
             }
