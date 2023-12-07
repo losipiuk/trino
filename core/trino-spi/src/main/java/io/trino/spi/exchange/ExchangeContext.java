@@ -14,6 +14,7 @@
 package io.trino.spi.exchange;
 
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.ImplicitContextKeyed;
 import io.trino.spi.QueryId;
 
 import java.util.StringJoiner;
@@ -22,6 +23,12 @@ import static java.util.Objects.requireNonNull;
 
 public class ExchangeContext
 {
+    // Use sth from io.opentelemetry.context to make maven dependency checker happy
+    // and allow us to use opentelemetry-context in scope "compile".
+    // We need scope compile because we use Span which inhertis from io.opentelemetry.context.ImplicitContextKeyed
+    // which lives in opentelemetry-context.
+    private static final ImplicitContextKeyed DUMMY = null;
+
     private final QueryId queryId;
     private final ExchangeId exchangeId;
     private final Span parentSpan;
