@@ -2674,7 +2674,11 @@
                             </annotationProcessorPaths>
                         </configuration>
                     </plugin>
-                </plugins>
+                  </plugins>
+
+
+
+
             </build>
         </profile>
         <profile>
