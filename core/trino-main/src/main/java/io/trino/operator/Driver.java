@@ -14,6 +14,7 @@
 package io.trino.operator;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -229,6 +230,9 @@ public class Driver
 
             SplitAssignment splitAssignment = pendingSplitAssignmentUpdates.getAndSet(null);
             if (splitAssignment == null) {
+                if (Throwables.getStackTraceAsString(new RuntimeException()).contains("isFinished(")) {
+                    throw new RuntimeException("blah");
+                }
                 return;
             }
 
@@ -259,7 +263,7 @@ public class Driver
             currentSplitAssignment = newAssignment;
         }
         catch (Throwable failure) {
-            driverContext.failed(failure);
+            //driverContext.failed(failure);
             throw failure;
         }
     }

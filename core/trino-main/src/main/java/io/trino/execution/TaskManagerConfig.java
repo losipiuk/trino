@@ -45,7 +45,7 @@ import static java.math.BigDecimal.TWO;
         "task.level-absolute-priority"})
 public class TaskManagerConfig
 {
-    private boolean threadPerDriverSchedulerEnabled = true;
+    private boolean threadPerDriverSchedulerEnabled;
     private boolean perOperatorCpuTimerEnabled = true;
     private boolean taskCpuTimerEnabled = true;
     private boolean statisticsCpuTimerEnabled = true;
