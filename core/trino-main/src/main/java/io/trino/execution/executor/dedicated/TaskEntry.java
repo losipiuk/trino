@@ -13,6 +13,7 @@
  */
 package io.trino.execution.executor.dedicated;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
@@ -136,7 +137,7 @@ class TaskEntry
     public synchronized ListenableFuture<Void> runSplit(SplitRunner split)
     {
         int splitId = nextSplitId();
-        log.info("Submitting split %s", split.getInfo() + "; splitId=" + splitId);
+        log.info("Submitting split %s", split.getInfo() + "; splitId=" + splitId + "; " + Throwables.getStackTraceAsString(new RuntimeException()));
         ListenableFuture<Void> done = scheduler.submit(
                 group,
                 splitId,
