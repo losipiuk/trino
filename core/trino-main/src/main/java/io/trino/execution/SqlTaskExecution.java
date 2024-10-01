@@ -893,7 +893,12 @@ public class SqlTaskExecution
         @Override
         public String getInfo()
         {
-            return (partitionedSplit == null) ? "" : formatSplitInfo(partitionedSplit.getSplit());
+            if (partitionedSplit == null) {
+                return "NON-PARTITIONED- " + this.driverContext.getTaskId() + "-" + this.getPipelineId();
+            }
+            else {
+                return "PARTITIONED- " + this.driverContext.getTaskId() + "-" + this.getPipelineId() + "; " + formatSplitInfo(partitionedSplit.getSplit());
+            }
         }
 
         @Override

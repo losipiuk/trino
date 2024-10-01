@@ -16,6 +16,7 @@ package io.trino.execution.executor.dedicated;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
+import io.airlift.log.Logger;
 import io.opentelemetry.api.trace.Tracer;
 import io.trino.execution.SplitRunner;
 import io.trino.execution.TaskId;
@@ -39,6 +40,8 @@ import static java.util.Objects.requireNonNull;
 class TaskEntry
         implements TaskHandle
 {
+    private static final Logger log = Logger.get(TaskEntry.class);
+
     private final TaskId taskId;
     private final Group group;
     private final FairScheduler scheduler;
@@ -132,6 +135,7 @@ class TaskEntry
 
     public synchronized ListenableFuture<Void> runSplit(SplitRunner split)
     {
+        log.info("Submitting split %s", split.getInfo());
         int splitId = nextSplitId();
         ListenableFuture<Void> done = scheduler.submit(
                 group,
