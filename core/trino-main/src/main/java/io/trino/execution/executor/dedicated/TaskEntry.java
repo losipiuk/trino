@@ -135,8 +135,8 @@ class TaskEntry
 
     public synchronized ListenableFuture<Void> runSplit(SplitRunner split)
     {
-        log.info("Submitting split %s", split.getInfo());
         int splitId = nextSplitId();
+        log.info("Submitting split %s", split.getInfo() + "; splitId=" + splitId);
         ListenableFuture<Void> done = scheduler.submit(
                 group,
                 splitId,

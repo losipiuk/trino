@@ -894,10 +894,10 @@ public class SqlTaskExecution
         public String getInfo()
         {
             if (partitionedSplit == null) {
-                return "NON-PARTITIONED- " + this.driverContext.getTaskId() + "-" + this.getPipelineId();
+                return "NON-PARTITIONED-" + this.driverContext.getTaskId() + "-" + this.getPipelineId();
             }
             else {
-                return "PARTITIONED- " + this.driverContext.getTaskId() + "-" + this.getPipelineId() + "; " + formatSplitInfo(partitionedSplit.getSplit());
+                return "PARTITIONED-" + this.driverContext.getTaskId() + "-" + this.getPipelineId() + "; " + formatSplitInfo(partitionedSplit.getSplit());
             }
         }
 

@@ -68,6 +68,8 @@ class SplitProcessor
 
         Span processSpan = newSpan(splitSpan, null);
 
+        LOG.info("RUNNING %s-%s", taskId, splitId);
+
         CpuTimer timer = new CpuTimer(Ticker.systemTicker(), false);
         long previousCpuNanos = 0;
         long previousScheduledNanos = 0;
