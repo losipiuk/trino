@@ -25,6 +25,7 @@ import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.memory.MemoryManagerConfig;
 import io.trino.memory.NodeMemoryConfig;
 import io.trino.operator.RetryPolicy;
+import io.trino.operator.join.JoinHashSupplier;
 import io.trino.spi.TrinoException;
 import io.trino.spi.session.PropertyMetadata;
 import io.trino.sql.planner.OptimizerConfig;
@@ -60,6 +61,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class SystemSessionProperties
         implements SystemSessionPropertiesProvider
 {
+    public static final String BIGINT_JOIN_CUTOFF = "bigint_join_cutoff";
     public static final String OPTIMIZE_HASH_GENERATION = "optimize_hash_generation";
     public static final String JOIN_DISTRIBUTION_TYPE = "join_distribution_type";
     public static final String JOIN_MAX_BROADCAST_TABLE_SIZE = "join_max_broadcast_table_size";
@@ -1128,6 +1130,11 @@ public final class SystemSessionProperties
                         ALLOW_UNSAFE_PUSHDOWN,
                         "Allow pushing down expressions that may fail for some inputs",
                         optimizerConfig.isUnsafePushdownAllowed(),
+                        true),
+                integerProperty(
+                        BIGINT_JOIN_CUTOFF,
+                        "BIGINT_JOIN_CUTOFF",
+                        JoinHashSupplier.JOIN_POSITIONS_ARRAY_CUTOFF,
                         true));
     }
 
@@ -2021,5 +2028,10 @@ public final class SystemSessionProperties
     public static boolean isUnsafePushdownAllowed(Session session)
     {
         return session.getSystemProperty(ALLOW_UNSAFE_PUSHDOWN, Boolean.class);
+    }
+
+    public static int getBigintJoinCutoff(Session session)
+    {
+        return session.getSystemProperty(BIGINT_JOIN_CUTOFF, Integer.class);
     }
 }

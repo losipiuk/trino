@@ -657,12 +657,14 @@ public class PagesIndex
     }
 
     public long getEstimatedMemoryRequiredToCreateLookupSource(
+            Session session,
             HashArraySizeSupplier hashArraySizeSupplier,
             Optional<Integer> sortChannel,
             List<Integer> joinChannels)
     {
         // channels and valueAddresses are shared between PagesIndex and JoinHashSupplier and are accounted as part of lookupSourceEstimatedRetainedSizeInBytes
         long lookupSourceEstimatedRetainedSizeInBytes = JoinHashSupplier.getEstimatedRetainedSizeInBytes(
+                session,
                 positionCount,
                 valueAddresses,
                 ImmutableList.copyOf(channels),

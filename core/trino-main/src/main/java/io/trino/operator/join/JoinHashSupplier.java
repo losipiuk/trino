@@ -30,6 +30,7 @@ import java.util.OptionalInt;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.SystemSessionProperties.getBigintJoinCutoff;
 import static io.trino.operator.join.JoinUtils.channelsToPages;
 import static java.util.Objects.requireNonNull;
 
@@ -40,7 +41,7 @@ public class JoinHashSupplier
      * This value is purposefully identical to that of IncrementalLoadFactorHashArraySizeSupplier#THRESHOLD_50,
      * as higher load factor means more excessive memory consumption
      */
-    private static final int JOIN_POSITIONS_ARRAY_CUTOFF = IncrementalLoadFactorHashArraySizeSupplier.THRESHOLD_50;
+    public static final int JOIN_POSITIONS_ARRAY_CUTOFF = IncrementalLoadFactorHashArraySizeSupplier.THRESHOLD_50;
 
     private final Session session;
     private final PagesHash pagesHash;
@@ -86,7 +87,7 @@ public class JoinHashSupplier
         this.pages = channelsToPages(channels);
         this.pageInstancesRetainedSizeInBytes = getPageInstancesRetainedSizeInBytes(channels);
 
-        if (singleBigintJoinChannel.isPresent() && addresses.size() <= JOIN_POSITIONS_ARRAY_CUTOFF) {
+        if (singleBigintJoinChannel.isPresent() && addresses.size() <= getBigintJoinCutoff(session)) {
             this.pagesHash = new BigintPagesHash(addresses, pagesHashStrategy, positionLinksFactoryBuilder, hashArraySizeSupplier, pages, singleBigintJoinChannel.getAsInt());
         }
         else {
@@ -121,6 +122,7 @@ public class JoinHashSupplier
     }
 
     public static long getEstimatedRetainedSizeInBytes(
+            Session session,
             int positionCount,
             LongArrayList addresses,
             List<ObjectArrayList<Block>> channels,
@@ -137,7 +139,7 @@ public class JoinHashSupplier
             result += ArrayPositionLinks.getEstimatedRetainedSizeInBytes(positionCount);
         }
         result += getPageInstancesRetainedSizeInBytes(channels);
-        if (singleBigintJoinChannel.isPresent() && addresses.size() <= JOIN_POSITIONS_ARRAY_CUTOFF) {
+        if (singleBigintJoinChannel.isPresent() && addresses.size() <= getBigintJoinCutoff(session)) {
             result += BigintPagesHash.getEstimatedRetainedSizeInBytes(positionCount, hashArraySizeSupplier, addresses, channels, blocksSizeInBytes);
         }
         else {

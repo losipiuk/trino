@@ -136,6 +136,7 @@ public class TestPagesIndex
                 }
                 long pageIndexSize = pagesIndex.getEstimatedSize().toBytes();
                 long estimatedMemoryRequiredToCreateLookupSource = pagesIndex.getEstimatedMemoryRequiredToCreateLookupSource(
+                        TEST_SESSION,
                         defaultHashArraySizeSupplier(),
                         sortChannel,
                         ImmutableList.of(joinChannel));

@@ -325,6 +325,7 @@ public class HashBuilderOperator
 
         checkState(index != null, "index is null");
         ListenableFuture<Void> reserved = localUserMemoryContext.setBytes(index.getEstimatedMemoryRequiredToCreateLookupSource(
+                operatorContext.getSession(),
                 hashArraySizeSupplier,
                 sortChannel,
                 hashChannels));
