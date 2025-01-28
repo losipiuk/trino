@@ -1135,7 +1135,7 @@ public final class SystemSessionProperties
                         BIGINT_JOIN_CUTOFF,
                         "BIGINT_JOIN_CUTOFF",
                         JoinHashSupplier.JOIN_POSITIONS_ARRAY_CUTOFF,
-                        true));
+                        false));
     }
 
     @Override
