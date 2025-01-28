@@ -14,6 +14,7 @@
 package io.trino.operator.join;
 
 import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
 import io.trino.Session;
 import io.trino.operator.HashArraySizeSupplier;
 import io.trino.operator.IncrementalLoadFactorHashArraySizeSupplier;
@@ -37,6 +38,8 @@ import static java.util.Objects.requireNonNull;
 public class JoinHashSupplier
         implements LookupSourceSupplier
 {
+    private static final Logger log = Logger.get(JoinHashSupplier.class);
+
     /**
      * This value is purposefully identical to that of IncrementalLoadFactorHashArraySizeSupplier#THRESHOLD_50,
      * as higher load factor means more excessive memory consumption
@@ -88,9 +91,11 @@ public class JoinHashSupplier
         this.pageInstancesRetainedSizeInBytes = getPageInstancesRetainedSizeInBytes(channels);
 
         if (singleBigintJoinChannel.isPresent() && addresses.size() <= getBigintJoinCutoff(session)) {
+            log.info("Using BigintPagesHash for join with %s positions", addresses.size());
             this.pagesHash = new BigintPagesHash(addresses, pagesHashStrategy, positionLinksFactoryBuilder, hashArraySizeSupplier, pages, singleBigintJoinChannel.getAsInt());
         }
         else {
+            log.info("Using DefaultPagesHash for join with %s positions", addresses.size());
             this.pagesHash = new DefaultPagesHash(addresses, pagesHashStrategy, positionLinksFactoryBuilder, hashArraySizeSupplier);
         }
         this.positionLinks = positionLinksFactoryBuilder.isEmpty() ? Optional.empty() : Optional.of(positionLinksFactoryBuilder.build());
