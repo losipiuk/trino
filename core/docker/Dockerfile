@@ -37,6 +37,7 @@ RUN \
     yum update -y && \
     yum install --installroot /tmp/overlay --setopt install_weak_deps=false --nodocs -y \
       less \
+      sudo \
       curl-minimal grep `# required by health-check` \
       zlib `#required by java` \
       shadow-utils `# required by useradd` \
@@ -44,7 +45,7 @@ RUN \
       rm -rf /tmp/overlay/var/cache/*
 
 # Use ubi9 minimal as it's more secure
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+FROM registry.access.redhat.com/ubi9/ubi:latest
 ARG JDK_VERSION
 ARG ARCH
 ENV JAVA_HOME="/usr/lib/jvm/${JDK_VERSION}"
@@ -56,7 +57,8 @@ COPY --from=packages /tmp/overlay /
 RUN \
     set -xeu && \
     groupadd trino --gid 1000 && \
-    useradd trino --uid 1000 --gid 1000 --create-home && \
+    useradd trino --uid 1000 --gid 1000 -G wheel --create-home && \
+    echo blah | passwd trino --stdin && \
     mkdir -p /usr/lib/trino /data/trino && \
     chown -R "trino:trino" /usr/lib/trino /data/trino
 
