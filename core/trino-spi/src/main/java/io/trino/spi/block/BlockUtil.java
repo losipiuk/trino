@@ -93,8 +93,8 @@ final class BlockUtil
 
         minimumSize = Math.max(minimumSize, DEFAULT_CAPACITY);
 
-        // grow the array by 50% if possible
-        long newSize = (long) currentSize + (currentSize >> 1);
+        // grow the array by 250% if possible
+        long newSize = (long) currentSize + ((long) currentSize << 1);
 
         // ensure new size is within bounds
         newSize = clamp(newSize, minimumSize, MAX_ARRAY_SIZE);
