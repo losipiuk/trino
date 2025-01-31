@@ -77,8 +77,8 @@ public record FakerColumnHandle(
         if (generator != null && !isCharacterColumn(column)) {
             throw new TrinoException(INVALID_COLUMN_PROPERTY, "The `%s` property can only be set for CHAR, VARCHAR or VARBINARY columns".formatted(GENERATOR_PROPERTY));
         }
-        Object min = propertyValue(column, MIN_PROPERTY);
-        Object max = propertyValue(column, MAX_PROPERTY);
+        Object min = PropertyValues.propertyValue(column, MIN_PROPERTY);
+        Object max = PropertyValues.propertyValue(column, MAX_PROPERTY);
         Domain domain = Domain.all(column.getType());
         if (min != null || max != null) {
             if (isCharacterColumn(column)) {
@@ -115,16 +115,6 @@ public record FakerColumnHandle(
     private static boolean isCharacterColumn(ColumnMetadata column)
     {
         return column.getType() instanceof CharType || column.getType() instanceof VarcharType || column.getType() instanceof VarbinaryType;
-    }
-
-    private static Object propertyValue(ColumnMetadata column, String property)
-    {
-        try {
-            return Literal.parse((String) column.getProperties().get(property), column.getType());
-        }
-        catch (IllegalArgumentException e) {
-            throw new TrinoException(INVALID_COLUMN_PROPERTY, "The `%s` property must be a valid %s literal".formatted(property, column.getType().getDisplayName()), e);
-        }
     }
 
     private static ValueSet stepValue(ColumnMetadata column)
