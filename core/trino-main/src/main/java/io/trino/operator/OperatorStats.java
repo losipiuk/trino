@@ -16,7 +16,9 @@ package io.trino.operator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 import com.google.errorprone.annotations.Immutable;
+import io.airlift.log.Logger;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.spi.Mergeable;
@@ -36,6 +38,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 @Immutable
 public class OperatorStats
 {
+    private static final Logger log = Logger.get(OperatorStats.class);
+
     private final int stageId;
     private final int pipelineId;
     private final int operatorId;
@@ -543,6 +547,12 @@ public class OperatorStats
             }
         }
 
+        Metrics mergedMetrics = metricsAccumulator.get();
+        log.info("Merging operator stats for operator %s.%s.%s: this:%s, mergees:%s, result:%s", stageId, pipelineId, operatorId,
+                this.getMetrics(),
+                Streams.stream(operators).map(OperatorStats::getMetrics).toList(),
+                mergedMetrics);
+
         return new OperatorStats(
                 stageId,
                 pipelineId,
@@ -572,7 +582,7 @@ public class OperatorStats
                 outputPositions,
 
                 dynamicFilterSplitsProcessed,
-                metricsAccumulator.get(),
+                mergedMetrics,
                 connectorMetricsAccumulator.get(),
 
                 DataSize.ofBytes(physicalWrittenDataSize),

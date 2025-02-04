@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
+import io.airlift.log.Logger;
 import io.airlift.stats.CounterStat;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
@@ -62,6 +63,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class OperatorContext
 {
+    private static Logger log = Logger.get(OperatorContext.class);
+
     private final int operatorId;
     private final PlanNodeId planNodeId;
     private final String operatorType;
@@ -233,6 +236,7 @@ public class OperatorContext
      */
     public void setLatestMetrics(Metrics metrics)
     {
+        log.info("Setting latest metrics for operator %s: %s", this, metrics);
         this.metrics.set(metrics);
     }
 
@@ -522,6 +526,15 @@ public class OperatorContext
 
         long inputPositionsCount = inputPositions.getTotalCount();
 
+        Metrics newOperatorMetrics = getOperatorMetrics(
+                metrics.get(),
+                inputPositionsCount,
+                new Duration(addInputTiming.getCpuNanos() + getOutputTiming.getCpuNanos() + finishTiming.getCpuNanos(), NANOSECONDS).convertTo(SECONDS).getValue(),
+                new Duration(addInputTiming.getWallNanos() + getOutputTiming.getWallNanos() + finishTiming.getWallNanos(), NANOSECONDS).convertTo(SECONDS).getValue(),
+                new Duration(blockedWallNanos.get(), NANOSECONDS).convertTo(SECONDS).getValue());
+
+        log.info("getOperatorMetrics %s: %s", this, newOperatorMetrics);
+
         return new OperatorStats(
                 driverContext.getTaskId().getStageId().getId(),
                 driverContext.getPipelineContext().getPipelineId(),
@@ -551,12 +564,7 @@ public class OperatorContext
                 outputPositions.getTotalCount(),
 
                 dynamicFilterSplitsProcessed.get(),
-                getOperatorMetrics(
-                        metrics.get(),
-                        inputPositionsCount,
-                        new Duration(addInputTiming.getCpuNanos() + getOutputTiming.getCpuNanos() + finishTiming.getCpuNanos(), NANOSECONDS).convertTo(SECONDS).getValue(),
-                        new Duration(addInputTiming.getWallNanos() + getOutputTiming.getWallNanos() + finishTiming.getWallNanos(), NANOSECONDS).convertTo(SECONDS).getValue(),
-                        new Duration(blockedWallNanos.get(), NANOSECONDS).convertTo(SECONDS).getValue()),
+                newOperatorMetrics,
                 connectorMetrics.get(),
 
                 DataSize.ofBytes(physicalWrittenDataSize.get()),
