@@ -254,7 +254,6 @@ public class ExchangeOperator
 
     private void updateExchangeDataSourceMetrics()
     {
-        exchangeDataSource.getMetrics().ifPresent(operatorContext::setPipelineOperatorMetrics);
     }
 
     @ThreadSafe
