@@ -16,6 +16,7 @@ package io.trino.execution;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects.ToStringHelper;
+import io.airlift.log.Logger;
 import io.trino.operator.OperatorStats;
 import io.trino.spi.metrics.Distribution;
 import io.trino.spi.metrics.Metric;
@@ -36,12 +37,21 @@ import static java.util.Objects.requireNonNull;
 public record DistributionSnapshot(long total, double min, double max, double p01, double p05, double p10, double p25, double p50, double p75, double p90, double p95, double p99)
         implements Metric<DistributionSnapshot>
 {
+    private static final Logger log = Logger.get(DistributionSnapshot.class);
+
     public static List<OperatorStats> pruneOperatorStats(List<OperatorStats> operatorStats)
     {
         requireNonNull(operatorStats, "operatorStats is null");
         return operatorStats.stream()
                 .map(DistributionSnapshot::pruneOperatorStats)
                 .collect(toImmutableList());
+    }
+
+    public DistributionSnapshot
+    {
+        if (total > 1800000 && p99 < 1000) {
+            log.warn(new RuntimeException(), "Suspicious distribution snapshot %s", this);
+        }
     }
 
     public static OperatorStats pruneOperatorStats(OperatorStats operatorStats)
