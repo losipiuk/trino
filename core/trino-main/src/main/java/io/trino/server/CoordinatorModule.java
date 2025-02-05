@@ -218,6 +218,7 @@ public class CoordinatorModule
         binder.bind(DispatchExecutor.class).in(Scopes.SINGLETON);
 
         // local dispatcher
+        jsonCodecBinder(binder).bindJsonCodec(QueryInfo.class);
         binder.bind(DispatchQueryFactory.class).to(LocalDispatchQueryFactory.class);
 
         // cluster memory manager
@@ -320,7 +321,6 @@ public class CoordinatorModule
         binder.bind(ExplainAnalyzeContext.class).in(Scopes.SINGLETON);
 
         // execution scheduler
-        jsonCodecBinder(binder).bindJsonCodec(QueryInfo.class);
         jsonCodecBinder(binder).bindJsonCodec(TaskInfo.class);
         jsonCodecBinder(binder).bindJsonCodec(TaskStatus.class);
         jsonCodecBinder(binder).bindJsonCodec(TaskUpdateRequest.class);
