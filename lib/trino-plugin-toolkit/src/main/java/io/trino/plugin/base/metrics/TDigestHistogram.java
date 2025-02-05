@@ -184,6 +184,7 @@ public class TDigestHistogram
     public String toString()
     {
         ToStringHelper helper = toStringHelper("")
+                .add("class", getClass().getSimpleName())
                 .add("count", getTotal())
                 .add("p01", formatDouble(getP01()))
                 .add("p05", formatDouble(getP05()))

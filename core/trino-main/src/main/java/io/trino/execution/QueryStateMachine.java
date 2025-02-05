@@ -1359,7 +1359,7 @@ public class QueryStateMachine
         if (queryInfo.isFinalQueryInfo()) {
             log.warn(new RuntimeException(), "Updating final query info for query %s; ", queryId);
             if (finalQueryInfo.compareAndSet(Optional.empty(), Optional.of(queryInfo))) {
-                log.warn(new RuntimeException(), "Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(queryInfo)).orElse("{}"));
+                log.warn(new RuntimeException(), "Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(queryInfo.pruneDigests())).orElse("{}"));
             }
         }
         return queryInfo;

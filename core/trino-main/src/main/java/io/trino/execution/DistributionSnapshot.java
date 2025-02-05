@@ -147,6 +147,7 @@ public record DistributionSnapshot(long total, double min, double max, double p0
     public String toString()
     {
         ToStringHelper helper = toStringHelper("")
+                .add("class", getClass().getSimpleName())
                 .add("count", total)
                 .add("p01", formatDouble(p01))
                 .add("p05", formatDouble(p05))
