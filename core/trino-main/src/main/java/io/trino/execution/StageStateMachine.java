@@ -31,11 +31,13 @@ import io.trino.operator.PipelineStats;
 import io.trino.operator.TaskStats;
 import io.trino.plugin.base.metrics.TDigestHistogram;
 import io.trino.spi.eventlistener.StageGcStatistics;
+import io.trino.spi.metrics.Metrics;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.tracing.TrinoAttributes;
 import io.trino.util.Failures;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
@@ -406,6 +408,7 @@ public class StageStateMachine
     {
         Optional<StageInfo> finalStageInfo = this.finalStageInfo.get();
         if (finalStageInfo.isPresent()) {
+            log.info("Returning final stage info for stage %s; operator metrics", stageId, metricsForStageInfo(finalStageInfo.orElseThrow()));
             return finalStageInfo.get();
         }
 
@@ -675,7 +678,7 @@ public class StageStateMachine
         if (state == FAILED) {
             failureInfo = failureCause.get();
         }
-        return new StageInfo(
+        StageInfo stageInfo = new StageInfo(
                 stageId,
                 state,
                 fragment,
@@ -686,6 +689,19 @@ public class StageStateMachine
                 ImmutableList.of(),
                 tables,
                 failureInfo);
+        log.info("Returning NON-final stage info for stage %s; operator metrics", stageId, metricsForStageInfo(stageInfo));
+        return stageInfo;
+    }
+
+    private static @NotNull List<Metrics> metricsForStageInfo(StageInfo stageInfo)
+    {
+        return stageInfo
+                .getTasks().stream()
+                .map(TaskInfo::stats)
+                .flatMap(taskInfo -> taskInfo.getPipelines().stream())
+                .flatMap(pipeline -> pipeline.getOperatorSummaries().stream())
+                .map(OperatorStats::getMetrics)
+                .toList();
     }
 
     public BasicStageInfo getBasicStageInfo(Supplier<Iterable<TaskInfo>> taskInfosSupplier)
