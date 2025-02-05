@@ -20,12 +20,14 @@ import io.airlift.concurrent.BoundedExecutor;
 import io.airlift.log.Logger;
 import io.trino.FeaturesConfig;
 import io.trino.Session;
+import io.trino.client.JsonCodec;
 import io.trino.client.NodeVersion;
 import io.trino.event.QueryMonitor;
 import io.trino.execution.ClusterSizeMonitor;
 import io.trino.execution.LocationFactory;
 import io.trino.execution.QueryExecution;
 import io.trino.execution.QueryExecution.QueryExecutionFactory;
+import io.trino.execution.QueryInfo;
 import io.trino.execution.QueryManager;
 import io.trino.execution.QueryManagerConfig;
 import io.trino.execution.QueryPreparer.PreparedQuery;
@@ -71,6 +73,7 @@ public class LocalDispatchQueryFactory
     private final int queryReportedRuleStatsLimit;
     private final boolean faultTolerantExecutionExchangeEncryptionEnabled;
     private final NodeVersion version;
+    private final JsonCodec<QueryInfo> queryInfoJsonCodec;
 
     @Inject
     public LocalDispatchQueryFactory(
@@ -86,7 +89,8 @@ public class LocalDispatchQueryFactory
             ClusterSizeMonitor clusterSizeMonitor,
             DispatchExecutor dispatchExecutor,
             FeaturesConfig featuresConfig,
-            NodeVersion version)
+            NodeVersion version,
+            JsonCodec<QueryInfo> queryInfoJsonCodec)
     {
         this.queryManager = requireNonNull(queryManager, "queryManager is null");
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
@@ -102,6 +106,7 @@ public class LocalDispatchQueryFactory
         this.queryReportedRuleStatsLimit = queryManagerConfig.getQueryReportedRuleStatsLimit();
         this.faultTolerantExecutionExchangeEncryptionEnabled = requireNonNull(featuresConfig, "featuresConfig is null").isFaultTolerantExecutionExchangeEncryptionEnabled();
         this.version = requireNonNull(version, "version is null");
+        this.queryInfoJsonCodec = requireNonNull(queryInfoJsonCodec, "queryInfoJsonCodec is null");
     }
 
     @Override
@@ -132,7 +137,8 @@ public class LocalDispatchQueryFactory
                 planOptimizersStatsCollector,
                 getQueryType(preparedQuery.getStatement()),
                 faultTolerantExecutionExchangeEncryptionEnabled,
-                version);
+                version,
+                Optional.of(queryInfoJsonCodec));
 
         // It is important that `queryCreatedEvent` is called here. Moving it past the `executor.submit` below
         // can result in delivering query-created event after query analysis has already started.

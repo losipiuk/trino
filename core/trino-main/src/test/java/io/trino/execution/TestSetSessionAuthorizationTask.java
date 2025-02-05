@@ -124,7 +124,8 @@ public class TestSetSessionAuthorizationTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
         return stateMachine;
     }
 }

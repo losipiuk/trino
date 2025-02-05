@@ -137,7 +137,8 @@ public class TestRollbackTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
     }
 
     private static SessionBuilder sessionBuilder()

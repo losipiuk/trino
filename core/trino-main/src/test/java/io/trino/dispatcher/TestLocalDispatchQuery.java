@@ -123,7 +123,8 @@ public class TestLocalDispatchQuery
                 createPlanOptimizersStatsCollector(),
                 Optional.of(QueryType.DATA_DEFINITION),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
         QueryMonitor queryMonitor = new QueryMonitor(
                 JsonCodec.jsonCodec(StageInfo.class),
                 JsonCodec.jsonCodec(OperatorStats.class),

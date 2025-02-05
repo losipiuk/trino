@@ -53,6 +53,7 @@ import io.trino.execution.QueryExecution;
 import io.trino.execution.QueryExecutionMBean;
 import io.trino.execution.QueryExecutorInternal;
 import io.trino.execution.QueryIdGenerator;
+import io.trino.execution.QueryInfo;
 import io.trino.execution.QueryManager;
 import io.trino.execution.QueryManagerConfig;
 import io.trino.execution.QueryPerformanceFetcher;
@@ -319,6 +320,7 @@ public class CoordinatorModule
         binder.bind(ExplainAnalyzeContext.class).in(Scopes.SINGLETON);
 
         // execution scheduler
+        jsonCodecBinder(binder).bindJsonCodec(QueryInfo.class);
         jsonCodecBinder(binder).bindJsonCodec(TaskInfo.class);
         jsonCodecBinder(binder).bindJsonCodec(TaskStatus.class);
         jsonCodecBinder(binder).bindJsonCodec(TaskUpdateRequest.class);

@@ -266,7 +266,8 @@ public class TestSetTimeZoneTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
     }
 
     private void executeSetTimeZone(SetTimeZone setTimeZone, QueryStateMachine stateMachine)

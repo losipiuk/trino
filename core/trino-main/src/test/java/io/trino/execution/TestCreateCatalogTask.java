@@ -98,7 +98,8 @@ public class TestCreateCatalogTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
 
         this.queryRunner = queryRunner;
     }
@@ -190,7 +191,8 @@ public class TestCreateCatalogTask
                     createPlanOptimizersStatsCollector(),
                     Optional.empty(),
                     true,
-                    new NodeVersion("test"));
+                    new NodeVersion("test"),
+                    Optional.empty());
 
             CreateCatalog statement = new CreateCatalog(
                     new NodeLocation(1, 1),

@@ -116,7 +116,8 @@ public class TestDeallocateTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
         Deallocate deallocate = new Deallocate(new NodeLocation(1, 1), new Identifier(statementName));
         new DeallocateTask().execute(deallocate, stateMachine, emptyList(), WarningCollector.NOOP);
         return stateMachine.getDeallocatedPreparedStatements();

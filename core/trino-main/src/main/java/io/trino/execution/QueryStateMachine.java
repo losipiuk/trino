@@ -30,6 +30,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.trino.Session;
+import io.trino.client.JsonCodec;
 import io.trino.client.NodeVersion;
 import io.trino.exchange.ExchangeInput;
 import io.trino.execution.QueryExecution.QueryOutputInfo;
@@ -116,6 +117,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 @ThreadSafe
 public class QueryStateMachine
 {
+    private static final Logger log = Logger.get(QueryStateMachine.class);
+
     private static final Logger QUERY_STATE_LOG = Logger.get(QueryStateMachine.class);
 
     private final QueryId queryId;
@@ -128,6 +131,7 @@ public class QueryStateMachine
     private final Metadata metadata;
     private final QueryOutputManager outputManager;
     private final Executor stateMachineExecutor;
+    private final Optional<JsonCodec<QueryInfo>> queryInfoJsonCodec;
 
     private final AtomicLong currentUserMemory = new AtomicLong();
     private final AtomicLong peakUserMemory = new AtomicLong();
@@ -203,7 +207,8 @@ public class QueryStateMachine
             WarningCollector warningCollector,
             PlanOptimizersStatsCollector queryStatsCollector,
             Optional<QueryType> queryType,
-            NodeVersion version)
+            NodeVersion version,
+            Optional<JsonCodec<QueryInfo>> queryInfoJsonCodec)
     {
         this.query = requireNonNull(query, "query is null");
         this.preparedQuery = requireNonNull(preparedQuery, "preparedQuery is null");
@@ -223,6 +228,7 @@ public class QueryStateMachine
         this.warningCollector = requireNonNull(warningCollector, "warningCollector is null");
         this.queryType = requireNonNull(queryType, "queryType is null");
         this.version = requireNonNull(version, "version is null");
+        this.queryInfoJsonCodec = requireNonNull(queryInfoJsonCodec, "queryInfoJsonCodec is null");
     }
 
     /**
@@ -244,7 +250,8 @@ public class QueryStateMachine
             PlanOptimizersStatsCollector queryStatsCollector,
             Optional<QueryType> queryType,
             boolean faultTolerantExecutionExchangeEncryptionEnabled,
-            NodeVersion version)
+            NodeVersion version,
+            Optional<JsonCodec<QueryInfo>> queryInfoJsonCodec)
     {
         return beginWithTicker(
                 existingTransactionId,
@@ -263,7 +270,8 @@ public class QueryStateMachine
                 queryStatsCollector,
                 queryType,
                 faultTolerantExecutionExchangeEncryptionEnabled,
-                version);
+                version,
+                queryInfoJsonCodec);
     }
 
     static QueryStateMachine beginWithTicker(
@@ -283,7 +291,8 @@ public class QueryStateMachine
             PlanOptimizersStatsCollector queryStatsCollector,
             Optional<QueryType> queryType,
             boolean faultTolerantExecutionExchangeEncryptionEnabled,
-            NodeVersion version)
+            NodeVersion version,
+            Optional<JsonCodec<QueryInfo>> queryInfoJsonCodec)
     {
         // if there is an existing transaction, activate it
         existingTransactionId.ifPresent(transactionId -> {
@@ -330,7 +339,8 @@ public class QueryStateMachine
                 warningCollector,
                 queryStatsCollector,
                 queryType,
-                version);
+                version,
+                queryInfoJsonCodec);
 
         queryStateMachine.addStateChangeListener(newState -> {
             QUERY_STATE_LOG.debug("Query %s is %s", queryStateMachine.getQueryId(), newState);
@@ -1347,7 +1357,10 @@ public class QueryStateMachine
     {
         QueryInfo queryInfo = getQueryInfo(stageInfo);
         if (queryInfo.isFinalQueryInfo()) {
-            finalQueryInfo.compareAndSet(Optional.empty(), Optional.of(queryInfo));
+            log.warn(new RuntimeException(), "Updating final query info for query %s; ", queryId);
+            if (finalQueryInfo.compareAndSet(Optional.empty(), Optional.of(queryInfo))) {
+                log.warn(new RuntimeException(), "Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(queryInfo)).orElse("{}"));
+            }
         }
         return queryInfo;
     }
@@ -1357,7 +1370,9 @@ public class QueryStateMachine
         ResultQueryInfo queryInfo = getResultQueryInfo(stageInfo);
         if (queryInfo.finalQueryInfo()) {
             QueryInfo fullQueryInfo = getQueryInfo(stageInfoProvider.get());
-            finalQueryInfo.compareAndSet(Optional.empty(), Optional.of(fullQueryInfo));
+            if (finalQueryInfo.compareAndSet(Optional.empty(), Optional.of(fullQueryInfo))) {
+                log.warn(new RuntimeException(), "Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(fullQueryInfo)).orElse("{}"));
+            }
             return new ResultQueryInfo(fullQueryInfo);
         }
         return queryInfo;

@@ -139,7 +139,8 @@ public class TestPrepareTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
         Prepare prepare = new Prepare(identifier(statementName), statement);
         new PrepareTask(new SqlParser()).execute(prepare, stateMachine, emptyList(), WarningCollector.NOOP);
         return stateMachine.getAddedPreparedStatements();

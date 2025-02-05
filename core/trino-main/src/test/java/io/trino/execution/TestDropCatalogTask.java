@@ -129,6 +129,7 @@ public class TestDropCatalogTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
     }
 }

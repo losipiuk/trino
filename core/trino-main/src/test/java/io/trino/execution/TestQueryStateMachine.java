@@ -867,7 +867,8 @@ public class TestQueryStateMachine
                     createPlanOptimizersStatsCollector(),
                     QUERY_TYPE,
                     false,
-                    new NodeVersion("test"));
+                    new NodeVersion("test"),
+                    Optional.empty());
             stateMachine.setInputs(INPUTS);
             stateMachine.setOutput(OUTPUT);
             stateMachine.setColumns(OUTPUT_FIELD_NAMES, OUTPUT_FIELD_TYPES);

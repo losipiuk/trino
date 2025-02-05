@@ -208,7 +208,8 @@ public class TestSetSessionTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
         getFutureValue(new SetSessionTask(plannerContext, accessControl, sessionPropertyManager).execute(new SetSession(new NodeLocation(1, 1), qualifiedPropName, expression), stateMachine, parameters, WarningCollector.NOOP));
 
         Map<String, String> sessionProperties = stateMachine.getSetSessionProperties();

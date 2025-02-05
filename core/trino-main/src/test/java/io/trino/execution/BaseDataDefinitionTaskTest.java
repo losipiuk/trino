@@ -243,7 +243,8 @@ public abstract class BaseDataDefinitionTaskTest
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
     }
 
     protected static class MockMetadata

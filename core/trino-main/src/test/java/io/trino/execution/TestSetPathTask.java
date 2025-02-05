@@ -124,7 +124,8 @@ public class TestSetPathTask
                 createPlanOptimizersStatsCollector(),
                 Optional.empty(),
                 true,
-                new NodeVersion("test"));
+                new NodeVersion("test"),
+                Optional.empty());
     }
 
     private void executeSetPathTask(PathSpecification pathSpecification, QueryStateMachine stateMachine)
