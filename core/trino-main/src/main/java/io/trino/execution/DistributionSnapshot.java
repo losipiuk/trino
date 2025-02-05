@@ -50,7 +50,20 @@ public record DistributionSnapshot(long total, double min, double max, double p0
     public DistributionSnapshot
     {
         if (total > 1800000 && p99 < 1000) {
-            log.warn(new RuntimeException(), "Suspicious distribution snapshot %s", this);
+            ToStringHelper blah = toStringHelper("")
+                    .add("count", total)
+                    .add("p01", formatDouble(p01))
+                    .add("p05", formatDouble(p05))
+                    .add("p10", formatDouble(p10))
+                    .add("p25", formatDouble(p25))
+                    .add("p50", formatDouble(p50))
+                    .add("p75", formatDouble(p75))
+                    .add("p90", formatDouble(p90))
+                    .add("p95", formatDouble(p95))
+                    .add("p99", formatDouble(p99))
+                    .add("min", formatDouble(min))
+                    .add("max", formatDouble(max));
+            log.warn(new RuntimeException(), "Suspicious distribution snapshot %s", blah.toString());
         }
     }
 
