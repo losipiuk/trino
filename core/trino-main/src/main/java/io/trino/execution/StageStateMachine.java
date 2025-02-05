@@ -408,7 +408,7 @@ public class StageStateMachine
     {
         Optional<StageInfo> finalStageInfo = this.finalStageInfo.get();
         if (finalStageInfo.isPresent()) {
-            log.info("Returning final stage info for stage %s; operator metrics", stageId, metricsForStageInfo(finalStageInfo.orElseThrow()));
+            log.info("Returning final stage info for stage %s; operator metrics %s", stageId, metricsForStageInfo(finalStageInfo.orElseThrow()));
             return finalStageInfo.get();
         }
 
