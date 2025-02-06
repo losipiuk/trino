@@ -689,7 +689,7 @@ public class StageStateMachine
                 ImmutableList.of(),
                 tables,
                 failureInfo);
-        log.info("Returning NON-final stage info for stage %s; operator metrics", stageId, metricsForStageInfo(stageInfo));
+        log.info("Returning NON-final stage info for stage %s; operator metrics %s", stageId, metricsForStageInfo(stageInfo));
         return stageInfo;
     }
 
