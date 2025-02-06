@@ -120,7 +120,9 @@ public record DistributionSnapshot(long total, double min, double max, double p0
                         entry -> {
                             Metric<?> metric = entry.getValue();
                             if (metric instanceof Distribution) {
-                                return new DistributionSnapshot((Distribution<?>) metric);
+                                DistributionSnapshot distributionSnapshot = new DistributionSnapshot((Distribution<?>) metric);
+                                log.info("Pruning distribution metric %s; %s -> %s", entry.getKey(), metric, distributionSnapshot);
+                                return distributionSnapshot;
                             }
                             return metric;
                         })));
