@@ -1357,9 +1357,8 @@ public class QueryStateMachine
     {
         QueryInfo queryInfo = getQueryInfo(stageInfo);
         if (queryInfo.isFinalQueryInfo()) {
-            log.warn(new RuntimeException(), "Updating final query info for query %s; ", queryId);
             if (finalQueryInfo.compareAndSet(Optional.empty(), Optional.of(queryInfo))) {
-                log.warn(new RuntimeException(), "Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(queryInfo.pruneDigests())).orElse("{}"));
+                log.warn(new RuntimeException(), "[1] Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(queryInfo.pruneDigests())).orElse("{}"));
             }
         }
         return queryInfo;
@@ -1371,7 +1370,7 @@ public class QueryStateMachine
         if (queryInfo.finalQueryInfo()) {
             QueryInfo fullQueryInfo = getQueryInfo(stageInfoProvider.get());
             if (finalQueryInfo.compareAndSet(Optional.empty(), Optional.of(fullQueryInfo))) {
-                log.warn(new RuntimeException(), "Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(fullQueryInfo)).orElse("{}"));
+                log.warn(new RuntimeException(), "[2] Updated query info for query %s; to %s", queryId, queryInfoJsonCodec.map(codec -> codec.toJson(fullQueryInfo.pruneDigests())).orElse("{}"));
             }
             return new ResultQueryInfo(fullQueryInfo);
         }
